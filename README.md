@@ -1,2 +1,2 @@
-# the-vps-admin-dashboard
-Admin dashboard of the-vps, the school administration system
+# the-vps-app
+Web app of the-vps for all roles (student, teacher, parent, admin)
