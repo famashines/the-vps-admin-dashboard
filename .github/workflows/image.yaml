@@ -38,8 +38,8 @@ jobs:
           TAG: sha-${{ github.sha }}
         run: |
           short="${GITHUB_SHA::7}"
-          branch="release/the-vps-admin-dashboard-${short}"
-          sed -i "s|newTag: .*|newTag: ${TAG}|" kubernetes/the-vps-admin-dashboard/kustomization.yaml
+          branch="release/the-vps-app-${short}"
+          sed -i "s|newTag: .*|newTag: ${TAG}|" kubernetes/the-vps-app/kustomization.yaml
           if git diff --quiet; then
             echo "gitops already uses ${TAG}"
             exit 0
@@ -47,8 +47,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git switch -c "$branch"
-          git commit -am "chore(the-vps-admin-dashboard): release sha-${short}"
+          git commit -am "chore(the-vps-app): release sha-${short}"
           git push origin "$branch"
           gh pr create --base main --head "$branch" \
-            --title "chore(the-vps-admin-dashboard): release sha-${short}" \
+            --title "chore(the-vps-app): release sha-${short}" \
             --body "Deploy \`ghcr.io/${GITHUB_REPOSITORY}:${TAG}\` from ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}. Merge to deploy."
