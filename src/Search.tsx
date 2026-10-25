@@ -17,16 +17,9 @@ const places: { to: string; label: string; text: string; icon: IconName }[] = [
 
 type Loaded = { status: "idle" | "loading" | "failed" } | { status: "loaded"; students: Student[] };
 
-export function SearchButton({ onOpen }: { onOpen?: () => void }) {
+export function SearchButton() {
   return (
-    <UnstyledButton
-      className="search-button"
-      onClick={() => {
-        onOpen?.();
-        spotlight.open();
-      }}
-      aria-keyshortcuts="/ Control+K"
-    >
+    <UnstyledButton className="search-button" onClick={spotlight.open} aria-keyshortcuts="/ Control+K">
       <Icon name="search" size={16} />
       <span className="search-button-text">Search or go to</span>
       <Kbd className="search-key">/</Kbd>

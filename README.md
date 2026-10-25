@@ -30,9 +30,11 @@ image to prod. Each pull request builds the image once as a check.
   name, guardian, admission number or phone (`0300...` and `+92300...` both
   match). A student result opens the Students page with that row marked.
   Keep the rest quiet: white panels with one thin border.
-- The menu holds the school name (a link to the Dashboard), the search, the
-  pages, the signed-in user, sign-out and the release. On a phone it opens
-  from the top bar, which also has a search button.
+- The search sits in a sticky top bar above the page, centered, as in GitLab.
+  The page is centered in the space next to the menu.
+- The menu holds the school name (a link to the Dashboard), the pages, the
+  signed-in user, sign-out and the release. On a phone it opens from the top
+  bar, which also has a search button.
 - Every state names the next step: an empty list offers "Register student", a
   failed list offers "Reload page".
 - The Dashboard shows the current school year: how many students are in a

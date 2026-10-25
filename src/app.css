@@ -58,13 +58,23 @@ select:focus-visible,
 }
 
 .navbar-top {
-  display: grid;
-  gap: 1rem;
-  padding: 0.5rem 0 1.25rem;
+  padding: 0.5rem 0.75rem 1.5rem;
 }
 
-.navbar-brand {
-  padding: 0 0.75rem;
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 2.5rem;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--ruling);
+}
+
+.topbar .search-button {
+  max-width: 36rem;
 }
 
 .search-button {
@@ -290,6 +300,7 @@ select:focus-visible,
 
 .page {
   max-width: 72rem;
+  margin-inline: auto;
   padding: 2.5rem 2.5rem 4rem;
 }
 
@@ -917,7 +928,7 @@ select:focus-visible,
 }
 
 @media (max-width: 48em) {
-  .navbar-brand {
+  .topbar {
     display: none;
   }
 }

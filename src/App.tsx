@@ -60,11 +60,8 @@ function Shell({ user }: { user: User }) {
       </AppShell.Header>
 
       <AppShell.Navbar className="navbar" aria-label="Main menu">
-        <AppShell.Section className="navbar-top">
-          <div className="navbar-brand">
-            <Brand onClick={close} />
-          </div>
-          <SearchButton onOpen={close} />
+        <AppShell.Section className="navbar-top" visibleFrom="sm">
+          <Brand onClick={close} />
         </AppShell.Section>
         <AppShell.Section grow className="navbar-links">
           {pages.map((page) => (
@@ -96,6 +93,9 @@ function Shell({ user }: { user: User }) {
       </AppShell.Navbar>
 
       <AppShell.Main className="main">
+        <div className="topbar">
+          <SearchButton />
+        </div>
         <div className="page">
           <Routes>
             <Route path="/" element={<Dashboard name={user.name} />} />
