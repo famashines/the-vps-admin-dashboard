@@ -940,3 +940,222 @@ select:focus-visible,
     display: none;
   }
 }
+
+.panel-pad {
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--ruling);
+}
+
+.ruled .money {
+  text-align: right;
+}
+
+.not-set {
+  color: var(--slate);
+}
+
+.owed.is-credit,
+.balance-figure.is-credit {
+  color: var(--royal);
+}
+
+.owed.is-clear {
+  color: var(--slate);
+}
+
+.rs {
+  color: var(--slate);
+  font-size: 0.875rem;
+}
+
+.fees-link {
+  color: var(--slate);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.fees-link.is-owed {
+  color: var(--ink);
+}
+
+.fees-link:hover {
+  color: var(--royal);
+  text-decoration: underline;
+}
+
+.balance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.balance-figure {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.balance-parts {
+  color: var(--slate);
+}
+
+.ledger-title {
+  margin: 0;
+  padding: 1.25rem 1.5rem 1rem;
+  border-bottom: 1px solid var(--ruling);
+}
+
+.ledger-empty {
+  padding: 1.25rem 1.5rem;
+}
+
+.ruled .entry {
+  white-space: normal;
+}
+
+.entry-note {
+  display: block;
+  color: var(--slate);
+  font-size: 0.8125rem;
+}
+
+.is-reversed .entry {
+  color: var(--slate);
+}
+
+.is-reversed .amount {
+  color: var(--slate);
+  text-decoration: line-through;
+}
+
+.receipt {
+  color: #000;
+  background: #fff;
+  border: 1px solid var(--ink);
+  border-left: 2px dashed var(--ink);
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.receipt-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--ink);
+}
+
+.receipt-school {
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.receipt-kind {
+  color: var(--slate);
+  font-size: 0.875rem;
+}
+
+.receipt-number {
+  color: var(--royal);
+  font-weight: 700;
+  font-size: 1.25rem;
+  white-space: nowrap;
+}
+
+.receipt-lines {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.35rem 1rem;
+  margin: 1rem 0;
+}
+
+.receipt-lines dt {
+  color: var(--slate);
+}
+
+.receipt-lines dd {
+  margin: 0;
+}
+
+.receipt-amount {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-block: 1px solid var(--ruling);
+}
+
+.receipt-amount strong {
+  font-size: 1.75rem;
+  letter-spacing: -0.01em;
+}
+
+.receipt-reversed {
+  color: var(--danger);
+  font-weight: 600;
+  margin-top: 0.75rem;
+}
+
+.receipt-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-top: 2.5rem;
+  color: var(--slate);
+  font-size: 0.875rem;
+}
+
+.receipt-sign {
+  min-width: 10rem;
+  padding-top: 0.25rem;
+  border-top: 1px solid var(--ink);
+  text-align: center;
+}
+
+@media (max-width: 30em) {
+  .receipt-head,
+  .receipt-foot {
+    flex-direction: column;
+  }
+  .receipt-lines {
+    grid-template-columns: 1fr;
+    gap: 0 1rem;
+  }
+  .receipt-lines dd {
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media print {
+  @page {
+    size: A5 landscape;
+    margin: 10mm;
+  }
+  body * {
+    visibility: hidden;
+  }
+  .receipt,
+  .receipt * {
+    visibility: visible;
+    color: #000 !important;
+  }
+  .receipt {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border-color: #000;
+  }
+  .receipt-sign,
+  .receipt-head {
+    border-color: #000;
+  }
+}

@@ -1,10 +1,12 @@
 import { Button, Table, Text, TextInput, Title, VisuallyHidden } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
+import type { AccountSummary } from "../fees.ts";
 import { findsStudent } from "../find.ts";
 import { Icon } from "../icons";
 import { gradeLabel } from "../school.ts";
 import { EnrollDialog, type Enrollment } from "./EnrollDialog";
+import { balanceText } from "./StudentFees";
 import { signInUrl } from "../session";
 
 export type Student = {
@@ -21,7 +23,7 @@ export type Student = {
 };
 type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; students: Student[] };
 
-const columns = ["Admission no.", "Name", "Father name", "Class", "Date of birth", "Guardian", "Phone"];
+const columns = ["Admission no.", "Name", "Father name", "Class", "Fees", "Date of birth", "Guardian", "Phone"];
 const showDate = (iso: string) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 
 function Empty({ status }: { status: "loading" | "failed" | "empty" }) {
@@ -53,6 +55,7 @@ export function Students() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [enrolling, setEnrolling] = useState<{ studentId: string; name: string }>();
   const [enrolled, setEnrolled] = useState<string>();
+  const [balances, setBalances] = useState<Map<string, number>>();
   type Note = { studentId: string; admissionNumber: string; name: string; enrolledIn?: string; enrollProblem?: string };
   const { registered, updated, found } = (useLocation().state ?? {}) as { registered?: Note; updated?: Note; found?: string };
   const marked = registered?.studentId ?? updated?.studentId ?? found;
@@ -66,6 +69,9 @@ export function Students() {
         setState(response.ok ? { status: "loaded", students: await response.json() } : { status: "failed" });
       })
       .catch(() => setState({ status: "failed" }));
+    fetch("/api/fees/accounts")
+      .then(async (response) => response.ok && setBalances(new Map(((await response.json()) as AccountSummary[]).reverse().map((a) => [a.studentId, a.balance.amount]))))
+      .catch(() => {});
   }, []);
 
   const empty = state.status === "loaded" ? (state.students.length === 0 ? "empty" : undefined) : state.status;
@@ -168,6 +174,13 @@ export function Students() {
                           <Button variant="subtle" size="compact-sm" onClick={() => setEnrolling({ studentId: s.studentId, name: `${s.firstName} ${s.lastName}` })}>
                             Enroll
                           </Button>
+                        )}
+                      </Table.Td>
+                      <Table.Td>
+                        {balances?.has(s.studentId) && (
+                          <Link to={`/students/${s.studentId}/fees`} className={`fees-link${balances.get(s.studentId)! > 0 ? " is-owed" : ""}`} aria-label={`Fee account of ${s.firstName} ${s.lastName}: ${balanceText(balances.get(s.studentId)!)}`}>
+                            {balanceText(balances.get(s.studentId)!)}
+                          </Link>
                         )}
                       </Table.Td>
                       <Table.Td>{showDate(s.dateOfBirth)}</Table.Td>

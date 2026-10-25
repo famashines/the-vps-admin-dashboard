@@ -13,6 +13,7 @@ const places: { to: string; label: string; text: string; icon: IconName }[] = [
   { to: "/students", label: "Students", text: "Every registered student", icon: "students" },
   { to: "/students/new", label: "Register a student", text: "New admission", icon: "add" },
   { to: "/classes", label: "Classes", text: "School years and sections", icon: "classes" },
+  { to: "/fees", label: "Fees", text: "Fee schedule and student balances", icon: "fees" },
 ];
 
 type Loaded = { status: "idle" | "loading" | "failed" } | { status: "loaded"; students: Student[] };

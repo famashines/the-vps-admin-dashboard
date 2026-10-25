@@ -6,9 +6,11 @@ import { Icon } from "./icons";
 import { Search, SearchButton } from "./Search";
 import { Classes } from "./pages/Classes";
 import { Dashboard } from "./pages/Dashboard";
+import { Fees } from "./pages/Fees";
 import { NotFound } from "./pages/NotFound";
 import { EditStudent, RegisterStudent } from "./pages/RegisterStudent";
 import { NoAccess, SignIn } from "./pages/SignIn";
+import { StudentFees } from "./pages/StudentFees";
 import { Students } from "./pages/Students";
 import { signOut, useSession, type User } from "./session";
 
@@ -18,6 +20,7 @@ const pages = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
   { to: "/students", label: "Students", icon: "students" },
   { to: "/classes", label: "Classes", icon: "classes" },
+  { to: "/fees", label: "Fees", icon: "fees" },
 ] as const;
 
 export function App() {
@@ -102,6 +105,8 @@ function Shell({ user }: { user: User }) {
             <Route path="/students" element={<Students />} />
             <Route path="/students/new" element={<RegisterStudent />} />
             <Route path="/students/:studentId/edit" element={<EditStudent />} />
+            <Route path="/students/:studentId/fees" element={<StudentFees user={user} />} />
+            <Route path="/fees" element={<Fees />} />
             <Route path="/classes" element={<Classes />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
