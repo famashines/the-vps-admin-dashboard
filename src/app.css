@@ -1014,8 +1014,14 @@ select:focus-visible,
   padding: 1.25rem 1.5rem;
 }
 
-.ruled .entry {
+.ruled .ledger-entry {
   white-space: normal;
+  min-width: 13rem;
+}
+
+.balance p,
+.receipt p {
+  margin: 0;
 }
 
 .entry-note {
@@ -1024,7 +1030,7 @@ select:focus-visible,
   font-size: 0.8125rem;
 }
 
-.is-reversed .entry {
+.is-reversed .ledger-entry {
   color: var(--slate);
 }
 
@@ -1134,28 +1140,27 @@ select:focus-visible,
   }
 }
 
+.print-receipt {
+  display: none;
+}
+
 @media print {
   @page {
     size: A5 landscape;
     margin: 10mm;
   }
-  body * {
-    visibility: hidden;
+  body {
+    background: #fff;
+  }
+  body > :not(.print-receipt) {
+    display: none !important;
+  }
+  .print-receipt {
+    display: block;
   }
   .receipt,
   .receipt * {
-    visibility: visible;
     color: #000 !important;
-  }
-  .receipt {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    border-color: #000;
-  }
-  .receipt-sign,
-  .receipt-head {
-    border-color: #000;
+    border-color: #000 !important;
   }
 }

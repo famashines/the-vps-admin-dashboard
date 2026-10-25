@@ -1,5 +1,6 @@
 import { Button, Group, Modal, Table, Text, Textarea, TextInput, Title, VisuallyHidden } from "@mantine/core";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { createPortal } from "react-dom";
 import { Link, useParams } from "react-router";
 import { chargeLabel, ledger, type Account, type AccountSummary, type Payment } from "../fees.ts";
 import { Icon } from "../icons";
@@ -17,10 +18,50 @@ async function getJson(path: string) {
   return response.json();
 }
 
+const classOf = (student: Student, account: Account) => {
+  const e = student.enrollments.find((x) => x.academicYearId === account.academicYearId);
+  return `${e ? `${gradeLabel(e.grade)} ${e.section}` : gradeLabel(account.grade)}, ${account.academicYearName}`;
+};
+
 export function balanceText(balance: number) {
   if (balance > 0) return `${showMoney(pkr(balance))} owed`;
   if (balance < 0) return `${showMoney(pkr(balance))} credit`;
   return "Paid up";
+}
+
+function Slip({ payment, student, account, user }: { payment: Payment; student: Student; account: Account; user: User }) {
+  return (
+    <article className="receipt" aria-label={`Receipt ${payment.receiptNumber}`}>
+      <header className="receipt-head">
+        <div>
+          <p className="receipt-school">The Vision Public School</p>
+          <p className="receipt-kind">Fee receipt, cash</p>
+        </div>
+        <p className="receipt-number">{payment.receiptNumber}</p>
+      </header>
+      <dl className="receipt-lines">
+        <dt>Date</dt>
+        <dd>{showDate(todayInPakistan(new Date(payment.receivedAt)))}</dd>
+        <dt>Student</dt>
+        <dd>
+          {student.firstName} {student.lastName}, {student.admissionNumber}
+        </dd>
+        <dt>Father name</dt>
+        <dd>{student.fatherName}</dd>
+        <dt>Class</dt>
+        <dd>{classOf(student, account)}</dd>
+      </dl>
+      <p className="receipt-amount">
+        <span>Amount received</span>
+        <strong>{showMoney(payment.amount)}</strong>
+      </p>
+      {payment.reversal && <p className="receipt-reversed">Reversed: {payment.reversal.reason}</p>}
+      <footer className="receipt-foot">
+        <p>Received by {payment.receivedBy === user.sub ? user.name : "the school office"}</p>
+        <p className="receipt-sign">Signature and stamp</p>
+      </footer>
+    </article>
+  );
 }
 
 function Receipt({ payment, student, account, user, onClose }: { payment?: Payment; student: Student; account: Account; user: User; onClose: () => void }) {
@@ -28,38 +69,13 @@ function Receipt({ payment, student, account, user, onClose }: { payment?: Payme
     <Modal opened={!!payment} onClose={onClose} title="Receipt" centered radius="md" size="lg">
       {payment && (
         <>
-          <article className="receipt" aria-label={`Receipt ${payment.receiptNumber}`}>
-            <header className="receipt-head">
-              <div>
-                <p className="receipt-school">The Vision Public School</p>
-                <p className="receipt-kind">Fee receipt, cash</p>
-              </div>
-              <p className="receipt-number">{payment.receiptNumber}</p>
-            </header>
-            <dl className="receipt-lines">
-              <dt>Date</dt>
-              <dd>{showDate(todayInPakistan(new Date(payment.receivedAt)))}</dd>
-              <dt>Student</dt>
-              <dd>
-                {student.firstName} {student.lastName}, {student.admissionNumber}
-              </dd>
-              <dt>Father name</dt>
-              <dd>{student.fatherName}</dd>
-              <dt>Class</dt>
-              <dd>
-                {gradeLabel(account.grade)}, {account.academicYearName}
-              </dd>
-            </dl>
-            <p className="receipt-amount">
-              <span>Amount received</span>
-              <strong>{showMoney(payment.amount)}</strong>
-            </p>
-            {payment.reversal && <p className="receipt-reversed">Reversed: {payment.reversal.reason}</p>}
-            <footer className="receipt-foot">
-              <p>Received by {payment.receivedBy === user.sub ? user.name : "the school office"}</p>
-              <p className="receipt-sign">Signature and stamp</p>
-            </footer>
-          </article>
+          <Slip payment={payment} student={student} account={account} user={user} />
+          {createPortal(
+            <div className="print-receipt">
+              <Slip payment={payment} student={student} account={account} user={user} />
+            </div>,
+            document.body,
+          )}
           <Group gap="sm" mt="lg">
             <Button leftSection={<Icon name="print" size={16} />} onClick={() => window.print()}>
               Print receipt
@@ -286,7 +302,7 @@ export function StudentFees({ user }: { user: User }) {
                       return (
                         <Table.Tr key={line.charge ? line.charge.chargeId : line.payment.paymentId} className={entry.reversal ? "is-reversed" : undefined}>
                           <Table.Td>{showDate(line.date)}</Table.Td>
-                          <Table.Td className="entry">
+                          <Table.Td className="ledger-entry">
                             {label}
                             {line.payment && <span className="entry-note">Receipt {line.payment.receiptNumber}</span>}
                             {entry.reversal && <span className="entry-note">Reversed: {entry.reversal.reason}</span>}
