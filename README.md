@@ -41,3 +41,9 @@ image to prod. Each pull request builds the image once as a check.
   class, and how many still need one, with a link to enroll them. Then the
   five most recent registrations. Parts that are not built yet are listed
   under "Coming next", with no numbers.
+- `src/app.css` is one global file. Before you add a class, search the file
+  for the name: a name that is already in use (for example `.entry` of the
+  form fieldsets) also gives its padding and grid to the new element.
+- Print from a Mantine `Modal` cuts off the content. The receipt is a portal
+  copy in `document.body` (`.print-receipt`, see `StudentFees.tsx`), and
+  `@media print` hides every other child of `body`.
