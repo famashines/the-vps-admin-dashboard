@@ -5,6 +5,7 @@ RUN npm ci
 COPY . .
 ARG RELEASE=local
 ENV VITE_RELEASE=$RELEASE
+RUN npm test
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.30.6-alpine
