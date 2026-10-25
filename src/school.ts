@@ -22,6 +22,23 @@ export function yearStarting(start: number) {
   return { name: `${start}-${String((start + 1) % 100).padStart(2, "0")}`, startsOn: `${start}-04-01`, endsOn: `${start + 1}-03-31` };
 }
 
+export const todayInPakistan = (now: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(now);
+
+const iso = (date: Date) => date.toISOString().slice(0, 10);
+
+function yearsBefore(today: string, years: number) {
+  const [y, m, d] = today.split("-").map(Number);
+  const date = new Date(Date.UTC(y - years, m - 1, d));
+  if (date.getUTCMonth() !== m - 1) date.setUTCDate(0);
+  return date;
+}
+
+export function birthDateLimits(today: string, minAge = 2, maxAge = 25) {
+  const earliest = yearsBefore(today, maxAge + 1);
+  earliest.setUTCDate(earliest.getUTCDate() + 1);
+  return { min: iso(earliest), max: iso(yearsBefore(today, minAge)) };
+}
+
 export const showDate = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 
