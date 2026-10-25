@@ -1,12 +1,13 @@
-import { Button, Table, Text, Title } from "@mantine/core";
+import { Button, Table, Text, TextInput, Title } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useSearchParams } from "react-router";
+import { findsStudent } from "../find.ts";
 import { Icon } from "../icons";
 import { gradeLabel } from "../school.ts";
 import { EnrollDialog, type Enrollment } from "./EnrollDialog";
 import { signInUrl } from "../session";
 
-type Student = { studentId: string; admissionNumber: string; firstName: string; lastName: string; fatherName: string | null; dateOfBirth: string; guardian: { name: string; phone: string }; enrollments: Enrollment[] };
+export type Student = { studentId: string; admissionNumber: string; firstName: string; lastName: string; fatherName: string | null; dateOfBirth: string; guardian: { name: string; phone: string }; enrollments: Enrollment[] };
 type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; students: Student[] };
 
 const columns = ["Admission no.", "Name", "Father name", "Class", "Date of birth", "Guardian", "Phone"];
@@ -41,7 +42,10 @@ export function Students() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [enrolling, setEnrolling] = useState<{ studentId: string; name: string }>();
   const [enrolled, setEnrolled] = useState<string>();
-  const registered = (useLocation().state as { registered?: { studentId: string; admissionNumber: string; name: string; enrolledIn?: string; enrollProblem?: string } } | null)?.registered;
+  const { registered, found } = (useLocation().state ?? {}) as { registered?: { studentId: string; admissionNumber: string; name: string; enrolledIn?: string; enrollProblem?: string }; found?: string };
+  const marked = registered?.studentId ?? found;
+  const [params, setParams] = useSearchParams();
+  const filter = params.get("q") ?? "";
 
   useEffect(() => {
     fetch("/api/students")
@@ -54,13 +58,18 @@ export function Students() {
 
   const empty = state.status === "loaded" ? (state.students.length === 0 ? "empty" : undefined) : state.status;
   const count = state.status === "loaded" && state.students.length > 0 ? state.students.length : undefined;
+  const shown = state.status === "loaded" ? state.students.filter((s) => findsStudent(s, filter)) : [];
+
+  useEffect(() => {
+    if (state.status === "loaded" && marked) document.querySelector("tr.new")?.scrollIntoView({ block: "center" });
+  }, [state.status, marked]);
 
   return (
     <>
       <header className="page-head">
         <div>
           <Title order={1}>Students</Title>
-          <Text className="lead">{count ? `${count} registered` : "Every student registered at the school office."}</Text>
+          <Text className="lead">{count ? (filter.trim() ? `${shown.length} of ${count} match the filter` : `${count} registered`) : "Every student registered at the school office."}</Text>
         </div>
         <Button component={Link} to="/students/new" leftSection={<Icon name="add" size={16} />}>
           Register student
@@ -83,6 +92,19 @@ export function Students() {
         </div>
       )}
       <div className="panel panel-flush">
+        {count && (
+          <div className="list-tools">
+            <TextInput
+              type="search"
+              value={filter}
+              onChange={(event) => setParams(event.currentTarget.value ? { q: event.currentTarget.value } : {}, { replace: true })}
+              placeholder="Name, father name, admission no. or phone"
+              aria-label="Filter students"
+              leftSection={<Icon name="search" size={16} />}
+              classNames={{ input: "field-input filter-input" }}
+            />
+          </div>
+        )}
         {empty ? (
           <div className="state">
             <Empty status={empty} />
@@ -99,8 +121,15 @@ export function Students() {
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
-                  {state.students.map((s) => (
-                    <Table.Tr key={s.studentId} className={s.studentId === registered?.studentId ? "new" : undefined}>
+                  {shown.length === 0 && (
+                    <Table.Tr>
+                      <Table.Td colSpan={columns.length} className="no-match">
+                        No student matches "{filter.trim()}".
+                      </Table.Td>
+                    </Table.Tr>
+                  )}
+                  {shown.map((s) => (
+                    <Table.Tr key={s.studentId} className={s.studentId === marked ? "new" : undefined}>
                       <Table.Td className="adm">{s.admissionNumber}</Table.Td>
                       <Table.Td className="name">
                         {s.firstName} {s.lastName}

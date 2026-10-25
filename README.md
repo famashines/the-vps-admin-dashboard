@@ -21,16 +21,21 @@ image to prod. Each pull request builds the image once as a check.
 - Paper `#fcfdff` (page), sheet `#ffffff` (panels), wash `#f3f6fb` (menu,
   table head, form footer), ink `#1c2541`, royal ink `#2b4c9b` (actions, the
   active menu item, admission numbers), ruling `#d5e0f2` (lines and panel
-  borders), margin red `#c42f3a` (only the margin and errors), slate `#5d6784`
-  (second-level text).
+  borders), danger `#b42318` (errors only), slate `#5d6784` (second-level
+  text). Amber `#fdf3e3` marks work to do, for example a student with no class.
 - One typeface: Atkinson Hyperlegible Next, self-hosted, with tabular figures
   for numbers and dates.
-- The one strong element is the red double margin of a school exercise book
-  between the menu and the page, and down the sign-in page. Keep the rest
-  quiet: white panels with one thin border, no shadows, no gradients.
-- The menu holds the app name, the pages, the signed-in user, sign-out and
-  the release. On a phone it opens from the top bar.
+- The one strong element is the search ("Search or go to", like GitLab). Press
+  `/` or Ctrl+K on any page. It finds pages, and students by name, father
+  name, guardian, admission number or phone (`0300...` and `+92300...` both
+  match). A student result opens the Students page with that row marked.
+  Keep the rest quiet: white panels with one thin border.
+- The menu holds the school name (a link to the Dashboard), the search, the
+  pages, the signed-in user, sign-out and the release. On a phone it opens
+  from the top bar, which also has a search button.
 - Every state names the next step: an empty list offers "Register student", a
   failed list offers "Reload page".
-- The Dashboard shows only what exists. Parts that are not built yet are
-  listed under "Coming next", with no numbers.
+- The Dashboard shows the current school year: how many students are in a
+  class, and how many still need one, with a link to enroll them. Then the
+  five most recent registrations. Parts that are not built yet are listed
+  under "Coming next", with no numbers.
