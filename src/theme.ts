@@ -14,9 +14,13 @@ export const theme = createTheme({
     fontFamily: "'Atkinson Hyperlegible Next', system-ui, sans-serif",
     fontWeight: "700",
     sizes: {
-      h1: { fontSize: "1.953rem", lineHeight: "1.2" },
-      h2: { fontSize: "1.563rem", lineHeight: "1.25" },
+      h1: { fontSize: "1.563rem", lineHeight: "1.25" },
+      h2: { fontSize: "1.125rem", lineHeight: "1.35" },
     },
   },
+  radius: { xs: "4px", sm: "6px", md: "10px" },
   defaultRadius: "sm",
+  components: {
+    Button: { defaultProps: { fw: 600 } },
+  },
 });

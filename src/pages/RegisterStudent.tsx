@@ -1,4 +1,4 @@
-import { Button, Group, NativeSelect, Radio, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Button, Group, NativeSelect, Radio, Text, TextInput, Title } from "@mantine/core";
 import { useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { toE164 } from "../phone.ts";
@@ -75,68 +75,70 @@ export function RegisterStudent() {
 
   const clear = (name: string) => errors[name] && setErrors(({ [name]: _, ...rest }) => rest);
   const line = (name: string, label: string, extra: object = {}) => (
-    <TextInput name={name} label={label} error={errors[name]} onChange={() => clear(name)} classNames={{ input: "line-input" }} required withAsterisk={false} {...extra} />
+    <TextInput name={name} label={label} error={errors[name]} onChange={() => clear(name)} classNames={{ input: "field-input" }} required withAsterisk={false} {...extra} />
   );
 
   return (
-    <Stack gap="lg" className="register">
-      <div>
-        <Title order={2}>Register student</Title>
-        <Text className="lead">The admission number is given when you register.</Text>
-      </div>
+    <div className="register">
+      <header className="page-head">
+        <div>
+          <Title order={1}>Register student</Title>
+          <Text className="lead">The admission number is given when you register.</Text>
+        </div>
+      </header>
       {problem && (
-        <Text className="error" role="alert">
+        <Text className="problem" role="alert">
           {problem}
         </Text>
       )}
-      <form ref={form} onSubmit={submit}>
-        <Stack gap="xl">
-          <fieldset className="entry">
-            <legend>Student</legend>
-            <div className="pair">
-              {line("firstName", "First name", { autoFocus: true, autoComplete: "off" })}
-              {line("lastName", "Last name", { autoComplete: "off" })}
-            </div>
-            <div className="pair">
-              {line("dateOfBirth", "Date of birth", { type: "date", max: new Date().toISOString().slice(0, 10) })}
-              <Radio.Group name="gender" label="Gender" error={errors.gender} onChange={() => clear("gender")} required withAsterisk={false}>
-                <Group gap="lg" mt={10}>
-                  <Radio value="female" label="Female" />
-                  <Radio value="male" label="Male" />
-                </Group>
-              </Radio.Group>
-            </div>
-          </fieldset>
-          <fieldset className="entry">
-            <legend>Guardian</legend>
-            {line("guardian.name", "Guardian name", { autoComplete: "off" })}
-            <div className="pair">
-              <NativeSelect
-                name="guardian.relation"
-                label="Relation"
-                data={[
-                  { value: "father", label: "Father" },
-                  { value: "mother", label: "Mother" },
-                  { value: "guardian", label: "Other guardian" },
-                ]}
-                error={errors["guardian.relation"]}
-                classNames={{ input: "line-input" }}
-                required
-                withAsterisk={false}
-              />
-              {line("guardian.phone", "Phone", { type: "tel", inputMode: "tel", placeholder: "0300 1234567", autoComplete: "off" })}
-            </div>
-          </fieldset>
-          <Group gap="md">
-            <Button type="submit" loading={saving}>
-              Register student
-            </Button>
-            <Button component={Link} to="/students" variant="subtle">
-              Cancel
-            </Button>
-          </Group>
-        </Stack>
+      <form ref={form} onSubmit={submit} className="panel form-panel">
+        <fieldset className="entry">
+          <legend>Student</legend>
+          <Text className="entry-hint">Write the names as on the B-form or birth certificate.</Text>
+          <div className="pair">
+            {line("firstName", "First name", { autoFocus: true, autoComplete: "off" })}
+            {line("lastName", "Last name", { autoComplete: "off" })}
+          </div>
+          <div className="pair">
+            {line("dateOfBirth", "Date of birth", { type: "date", max: new Date().toISOString().slice(0, 10) })}
+            <Radio.Group name="gender" label="Gender" error={errors.gender} onChange={() => clear("gender")} required withAsterisk={false}>
+              <Group gap="lg" mt={10}>
+                <Radio value="female" label="Female" />
+                <Radio value="male" label="Male" />
+              </Group>
+            </Radio.Group>
+          </div>
+        </fieldset>
+        <fieldset className="entry">
+          <legend>Guardian</legend>
+          <Text className="entry-hint">The office uses this phone number to reach the family.</Text>
+          {line("guardian.name", "Guardian name", { autoComplete: "off" })}
+          <div className="pair">
+            <NativeSelect
+              name="guardian.relation"
+              label="Relation"
+              data={[
+                { value: "father", label: "Father" },
+                { value: "mother", label: "Mother" },
+                { value: "guardian", label: "Other guardian" },
+              ]}
+              error={errors["guardian.relation"]}
+              classNames={{ input: "field-input" }}
+              required
+              withAsterisk={false}
+            />
+            {line("guardian.phone", "Phone", { type: "tel", inputMode: "tel", placeholder: "0300 1234567", autoComplete: "off" })}
+          </div>
+        </fieldset>
+        <Group gap="sm" className="form-actions">
+          <Button type="submit" loading={saving}>
+            Register student
+          </Button>
+          <Button component={Link} to="/students" variant="default">
+            Cancel
+          </Button>
+        </Group>
       </form>
-    </Stack>
+    </div>
   );
 }

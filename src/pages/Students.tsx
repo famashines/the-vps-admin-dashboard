@@ -1,6 +1,7 @@
-import { Button, Group, Stack, Table, Text, Title } from "@mantine/core";
+import { Button, Table, Text, Title } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
+import { Icon } from "../icons";
 import { signInUrl } from "../session";
 
 type Student = { studentId: string; admissionNumber: string; firstName: string; lastName: string; dateOfBirth: string; guardian: { name: string; phone: string } };
@@ -8,6 +9,31 @@ type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; 
 
 const columns = ["Admission no.", "Name", "Date of birth", "Guardian", "Phone"];
 const showDate = (iso: string) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
+
+function Empty({ status }: { status: "loading" | "failed" | "empty" }) {
+  if (status === "loading") return <Text className="state-text">Loading students.</Text>;
+  if (status === "failed")
+    return (
+      <>
+        <Text className="state-title error" role="alert">
+          The student list did not load.
+        </Text>
+        <Text className="state-text">Check the connection, then reload the page.</Text>
+        <Button variant="default" mt="md" onClick={() => location.reload()}>
+          Reload page
+        </Button>
+      </>
+    );
+  return (
+    <>
+      <Text className="state-title">No students registered yet.</Text>
+      <Text className="state-text">Register the first student. The admission number is given on save.</Text>
+      <Button component={Link} to="/students/new" mt="md" leftSection={<Icon name="add" size={16} />}>
+        Register student
+      </Button>
+    </>
+  );
+}
 
 export function Students() {
   const [state, setState] = useState<State>({ status: "loading" });
@@ -22,63 +48,62 @@ export function Students() {
       .catch(() => setState({ status: "failed" }));
   }, []);
 
-  const message =
-    state.status === "loading"
-      ? "Loading students."
-      : state.status === "failed"
-        ? "The student list did not load. Reload the page to try again."
-        : state.students.length === 0
-          ? "No students registered yet."
-          : undefined;
+  const empty = state.status === "loaded" ? (state.students.length === 0 ? "empty" : undefined) : state.status;
+  const count = state.status === "loaded" && state.students.length > 0 ? state.students.length : undefined;
 
   return (
-    <Stack gap="lg">
-      <Group justify="space-between" align="flex-end">
-        <Title order={2}>Students</Title>
-        <Button component={Link} to="/students/new">
+    <>
+      <header className="page-head">
+        <div>
+          <Title order={1}>Students</Title>
+          <Text className="lead">{count ? `${count} registered` : "Every student registered at the school office."}</Text>
+        </div>
+        <Button component={Link} to="/students/new" leftSection={<Icon name="add" size={16} />}>
           Register student
         </Button>
-      </Group>
+      </header>
       {registered && (
-        <Text className="notice" role="status">
-          Registered {registered.name} as {registered.admissionNumber}.
-        </Text>
+        <div className="notice" role="status">
+          <Icon name="check" />
+          <Text>
+            Registered {registered.name} as <strong>{registered.admissionNumber}</strong>.
+          </Text>
+        </div>
       )}
-      <Table.ScrollContainer minWidth={640}>
-        <Table className="ruled" withRowBorders={false}>
-          <Table.Thead>
-            <Table.Tr>
-              {columns.map((column) => (
-                <Table.Th key={column}>{column}</Table.Th>
-              ))}
-            </Table.Tr>
-          </Table.Thead>
-          <Table.Tbody>
-            {message ? (
-              <Table.Tr>
-                <Table.Td colSpan={columns.length}>
-                  <Text c={state.status === "failed" ? undefined : "dimmed"} className={state.status === "failed" ? "error" : undefined} py="lg" role={state.status === "failed" ? "alert" : undefined}>
-                    {message}
-                  </Text>
-                </Table.Td>
-              </Table.Tr>
-            ) : (
-              state.status === "loaded" &&
-              state.students.map((s) => (
-                <Table.Tr key={s.studentId} className={s.studentId === registered?.studentId ? "new" : undefined}>
-                  <Table.Td>{s.admissionNumber}</Table.Td>
-                  <Table.Td>
-                    {s.firstName} {s.lastName}
-                  </Table.Td>
-                  <Table.Td>{showDate(s.dateOfBirth)}</Table.Td>
-                  <Table.Td>{s.guardian.name}</Table.Td>
-                  <Table.Td>{s.guardian.phone}</Table.Td>
-                </Table.Tr>
-              ))
-            )}
-          </Table.Tbody>
-        </Table>
-      </Table.ScrollContainer>
-    </Stack>
+      <div className="panel panel-flush">
+        {empty ? (
+          <div className="state">
+            <Empty status={empty} />
+          </div>
+        ) : (
+          state.status === "loaded" && (
+            <Table.ScrollContainer minWidth={640} type="native">
+              <Table className="ruled" withRowBorders={false}>
+                <Table.Thead>
+                  <Table.Tr>
+                    {columns.map((column) => (
+                      <Table.Th key={column}>{column}</Table.Th>
+                    ))}
+                  </Table.Tr>
+                </Table.Thead>
+                <Table.Tbody>
+                  {state.students.map((s) => (
+                    <Table.Tr key={s.studentId} className={s.studentId === registered?.studentId ? "new" : undefined}>
+                      <Table.Td className="adm">{s.admissionNumber}</Table.Td>
+                      <Table.Td className="name">
+                        {s.firstName} {s.lastName}
+                      </Table.Td>
+                      <Table.Td>{showDate(s.dateOfBirth)}</Table.Td>
+                      <Table.Td>{s.guardian.name}</Table.Td>
+                      <Table.Td className="num">{s.guardian.phone}</Table.Td>
+                    </Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+            </Table.ScrollContainer>
+          )
+        )}
+      </div>
+    </>
   );
 }

@@ -7,10 +7,10 @@ function CopyPage({ children }: { children: ReactNode }) {
     <main className="copy-page">
       <Stack gap="lg" align="flex-start" className="copy-content">
         <div>
-          <Title order={1} fz="2rem">
+          <Title order={1} className="copy-title">
             the-vps
           </Title>
-          <Text c="dimmed">School office</Text>
+          <Text className="lead">School office</Text>
         </div>
         {children}
       </Stack>
