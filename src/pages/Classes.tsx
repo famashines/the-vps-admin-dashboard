@@ -91,7 +91,7 @@ function AddSection({ year, onResult }: { year: Year; onResult: (added: string |
   return (
     <form className="add-section" onSubmit={submit} aria-label={`Add a section to ${year.name}`}>
       <NativeSelect name="grade" label="Grade" data={GRADES.map(([value, label]) => ({ value, label }))} classNames={{ input: "field-input" }} />
-      <TextInput name="section" label="Section" placeholder="A" maxLength={20} classNames={{ input: "field-input" }} required withAsterisk={false} error={problem} />
+      <TextInput name="section" label="Section" placeholder="A" maxLength={20} autoComplete="off" classNames={{ input: "field-input" }} required withAsterisk={false} error={problem} />
       <Button type="submit" variant="light" loading={saving} leftSection={<Icon name="add" size={16} />}>
         Add section
       </Button>
@@ -191,6 +191,7 @@ function EditSection({ section, onClose, onSaved }: { section: Section | undefin
             label="Section"
             defaultValue={s.section}
             maxLength={20}
+            autoComplete="off"
             data-autofocus
             error={fields.section && "Enter a section name of 1 to 20 characters."}
             classNames={{ input: "field-input" }}

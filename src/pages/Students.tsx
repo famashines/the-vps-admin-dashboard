@@ -139,7 +139,7 @@ export function Students() {
                     {columns.map((column) => (
                       <Table.Th key={column}>{column}</Table.Th>
                     ))}
-                    <Table.Th>
+                    <Table.Th className="row-action">
                       <VisuallyHidden>Edit</VisuallyHidden>
                     </Table.Th>
                   </Table.Tr>
