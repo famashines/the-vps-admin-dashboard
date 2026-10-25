@@ -663,6 +663,32 @@ select:focus-visible,
   border-radius: var(--mantine-radius-sm);
   padding: 0.75rem 1rem;
   margin-bottom: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.adm-mark {
+  color: var(--royal);
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin-right: 0.5rem;
+}
+
+.edit-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.edit-form .problem {
+  margin-bottom: 0;
+}
+
+.ruled .row-action {
+  text-align: right;
+  padding-left: 0;
 }
 
 .form-panel {
@@ -832,6 +858,17 @@ select:focus-visible,
   border: 1px solid var(--ruling);
   border-radius: 6px;
   background: var(--sheet);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tag:hover,
+.tag:focus-visible {
+  border-color: var(--royal);
+}
+
+.year-tools {
+  align-items: center;
 }
 
 .tag-name {

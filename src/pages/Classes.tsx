@@ -1,7 +1,7 @@
-import { Button, NativeSelect, Text, TextInput, Title } from "@mantine/core";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Button, Group, Modal, NativeSelect, Text, TextInput, Title } from "@mantine/core";
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Icon } from "../icons";
-import { GRADES, gradeLabel, schoolYearOf, send, showDate, yearStarting, type Year } from "../school.ts";
+import { GRADES, gradeLabel, isStale, schoolYearOf, send, showDate, yearStarting, type Answer, type Section, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 
 type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; years: Year[] };
@@ -99,8 +99,141 @@ function AddSection({ year, onResult }: { year: Year; onResult: (added: string |
   );
 }
 
+function EditDialog({ title, opened, onClose, onSave, children }: {
+  title: string;
+  opened: boolean;
+  onClose: () => void;
+  onSave: (data: FormData, key: string) => Promise<Answer>;
+  children: (fields: Record<string, string>) => ReactNode;
+}) {
+  const [key, nextKey] = useKey();
+  const [answer, setAnswer] = useState<Answer>();
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (opened) setAnswer(undefined);
+  }, [opened]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    const result = await onSave(new FormData(event.currentTarget), key);
+    setSaving(false);
+    setAnswer(result);
+    if (result.ok) nextKey();
+  }
+
+  const failed = answer && !answer.ok ? answer : undefined;
+  const fields = failed?.fields ?? {};
+
+  return (
+    <Modal opened={opened} onClose={onClose} title={title} centered radius="md">
+      <form onSubmit={submit} className="edit-form">
+        {children(fields)}
+        {failed && !Object.keys(fields).length && (
+          <div className="problem" role="alert">
+            <Text>{failed.message}</Text>
+            {isStale(failed) && (
+              <Button variant="default" size="compact-sm" onClick={() => location.reload()}>
+                Reload
+              </Button>
+            )}
+          </div>
+        )}
+        <Group gap="sm">
+          <Button type="submit" loading={saving}>
+            Save changes
+          </Button>
+          <Button variant="default" onClick={onClose}>
+            Cancel
+          </Button>
+        </Group>
+      </form>
+    </Modal>
+  );
+}
+
+function EditSection({ section, onClose, onSaved }: { section: Section | undefined; onClose: () => void; onSaved: (label: string) => void }) {
+  const [shown, setShown] = useState(section);
+  useEffect(() => {
+    if (section) setShown(section);
+  }, [section]);
+  const s = section ?? shown;
+  if (!s) return null;
+  const locked = s.students > 0;
+
+  return (
+    <EditDialog
+      title={`Edit ${gradeLabel(s.grade)} ${s.section}`}
+      opened={!!section}
+      onClose={onClose}
+      onSave={async (data, key) => {
+        const body = { grade: locked ? s.grade : String(data.get("grade")), section: String(data.get("section")).trim(), expectedVersion: s.version };
+        const answer = await send(`/api/class-sections/${s.classSectionId}`, body, key, "PUT");
+        if (answer.ok) onSaved(`${gradeLabel(body.grade)} ${body.section}`);
+        return answer;
+      }}
+    >
+      {(fields) => (
+        <>
+          <NativeSelect
+            name="grade"
+            label="Grade"
+            defaultValue={s.grade}
+            disabled={locked}
+            description={locked ? `Move its ${s.students} ${s.students === 1 ? "student" : "students"} to another section first to change the grade.` : undefined}
+            error={fields.grade}
+            data={GRADES.map(([value, label]) => ({ value, label }))}
+            classNames={{ input: "field-input" }}
+          />
+          <TextInput
+            name="section"
+            label="Section"
+            defaultValue={s.section}
+            maxLength={20}
+            data-autofocus
+            error={fields.section && "Enter a section name of 1 to 20 characters."}
+            classNames={{ input: "field-input" }}
+            required
+            withAsterisk={false}
+          />
+        </>
+      )}
+    </EditDialog>
+  );
+}
+
+function EditYear({ year, opened, onClose, onSaved }: { year: Year; opened: boolean; onClose: () => void; onSaved: () => void }) {
+  return (
+    <EditDialog
+      title={`Edit ${year.name}`}
+      opened={opened}
+      onClose={onClose}
+      onSave={async (data, key) => {
+        const body = { name: String(data.get("name")).trim(), startsOn: String(data.get("startsOn")), endsOn: String(data.get("endsOn")), expectedVersion: year.version };
+        const answer = await send(`/api/academic-years/${year.academicYearId}`, body, key, "PUT");
+        if (answer.ok) onSaved();
+        return answer;
+      }}
+    >
+      {(fields) => (
+        <>
+          <TextInput name="name" label="Name" defaultValue={year.name} data-autofocus error={fields.name && "Name must look like 2026-27."} classNames={{ input: "field-input" }} required withAsterisk={false} />
+          <div className="pair">
+            <TextInput name="startsOn" label="Starts on" type="date" defaultValue={year.startsOn} error={fields.startsOn && "Enter a real date."} classNames={{ input: "field-input" }} required withAsterisk={false} />
+            <TextInput name="endsOn" label="Ends on" type="date" defaultValue={year.endsOn} error={fields.endsOn && (fields.endsOn.startsWith("The") ? fields.endsOn : "Enter a real date.")} classNames={{ input: "field-input" }} required withAsterisk={false} />
+          </div>
+        </>
+      )}
+    </EditDialog>
+  );
+}
+
 function YearPanel({ year, onChanged }: { year: Year; onChanged: () => void }) {
   const [added, setAdded] = useState<string>();
+  const [editing, setEditing] = useState<Section>();
+  const [editingYear, setEditingYear] = useState(false);
+  const [saved, setSaved] = useState<string>();
   const grades = GRADES.filter(([grade]) => year.sections.some((s) => s.grade === grade));
   const students = year.sections.reduce((sum, s) => sum + s.students, 0);
 
@@ -115,9 +248,14 @@ function YearPanel({ year, onChanged }: { year: Year; onChanged: () => void }) {
             {showDate(year.startsOn)} to {showDate(year.endsOn)}
           </Text>
         </div>
-        <Text className="year-count">
-          {year.sections.length} {year.sections.length === 1 ? "section" : "sections"}, {students} {students === 1 ? "student" : "students"}
-        </Text>
+        <Group gap="sm" wrap="nowrap" className="year-tools">
+          <Text className="year-count">
+            {year.sections.length} {year.sections.length === 1 ? "section" : "sections"}, {students} {students === 1 ? "student" : "students"}
+          </Text>
+          <Button variant="subtle" size="compact-sm" onClick={() => setEditingYear(true)} aria-label={`Edit the school year ${year.name}`}>
+            Edit year
+          </Button>
+        </Group>
       </header>
       {grades.length === 0 ? (
         <Text className="state-text board-empty">No sections yet. Add the first one below, for example Class 1, section A.</Text>
@@ -130,27 +268,46 @@ function YearPanel({ year, onChanged }: { year: Year; onChanged: () => void }) {
                 {year.sections
                   .filter((s) => s.grade === grade)
                   .map((s) => (
-                    <span className="tag" key={s.classSectionId}>
+                    <button type="button" className="tag" key={s.classSectionId} onClick={() => setEditing(s)} aria-label={`Edit ${label} ${s.section}, ${s.students} ${s.students === 1 ? "student" : "students"}`}>
                       <span className="tag-name">{s.section}</span>
-                      <span className="tag-count" aria-label={`${s.students} students`}>
-                        {s.students}
-                      </span>
-                    </span>
+                      <span className="tag-count">{s.students}</span>
+                    </button>
                   ))}
               </dd>
             </div>
           ))}
         </dl>
       )}
-      {added && (
+      {(added || saved) && (
         <div className="notice" role="status">
           <Icon name="check" />
-          <Text>Added {added}.</Text>
+          <Text>{added ? `Added ${added}.` : saved}</Text>
         </div>
       )}
+      <EditSection
+        section={editing}
+        onClose={() => setEditing(undefined)}
+        onSaved={(label) => {
+          setEditing(undefined);
+          setAdded(undefined);
+          setSaved(`Saved ${label}.`);
+          onChanged();
+        }}
+      />
+      <EditYear
+        year={year}
+        opened={editingYear}
+        onClose={() => setEditingYear(false)}
+        onSaved={() => {
+          setEditingYear(false);
+          setSaved("Saved the school year.");
+          onChanged();
+        }}
+      />
       <AddSection
         year={year}
         onResult={(label) => {
+          setSaved(undefined);
           setAdded(label);
           if (label) onChanged();
         }}

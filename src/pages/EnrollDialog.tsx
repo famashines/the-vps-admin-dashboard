@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { gradeLabel, send, type Year } from "../school.ts";
 
-export type Enrollment = { academicYearId: string; academicYearName: string; classSectionId: string; grade: string; section: string };
+export type Enrollment = { enrollmentId: string; version: number; academicYearId: string; academicYearName: string; classSectionId: string; grade: string; section: string };
 
 export function EnrollDialog({ student, onClose, onEnrolled }: {
   student: { studentId: string; name: string } | undefined;
@@ -43,7 +43,7 @@ export function EnrollDialog({ student, onClose, onEnrolled }: {
     const answer = await send("/api/enrollments", { studentId: student.studentId, classSectionId }, key);
     setSaving(false);
     if (!answer.ok) return setProblem(answer.message);
-    onEnrolled({ academicYearId: chosen.year.academicYearId, academicYearName: chosen.year.name, classSectionId, grade: chosen.grade, section: chosen.section });
+    onEnrolled({ enrollmentId: answer.data.enrollmentId, version: 1, academicYearId: chosen.year.academicYearId, academicYearName: chosen.year.name, classSectionId, grade: chosen.grade, section: chosen.section });
   }
 
   return (

@@ -1,4 +1,4 @@
-import { Button, Table, Text, TextInput, Title } from "@mantine/core";
+import { Button, Table, Text, TextInput, Title, VisuallyHidden } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 import { findsStudent } from "../find.ts";
@@ -7,7 +7,18 @@ import { gradeLabel } from "../school.ts";
 import { EnrollDialog, type Enrollment } from "./EnrollDialog";
 import { signInUrl } from "../session";
 
-export type Student = { studentId: string; admissionNumber: string; firstName: string; lastName: string; fatherName: string | null; dateOfBirth: string; guardian: { name: string; phone: string }; enrollments: Enrollment[] };
+export type Student = {
+  studentId: string;
+  version: number;
+  admissionNumber: string;
+  firstName: string;
+  lastName: string;
+  fatherName: string | null;
+  dateOfBirth: string;
+  gender: string;
+  guardian: { name: string; relation: string; phone: string };
+  enrollments: Enrollment[];
+};
 type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; students: Student[] };
 
 const columns = ["Admission no.", "Name", "Father name", "Class", "Date of birth", "Guardian", "Phone"];
@@ -42,8 +53,9 @@ export function Students() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [enrolling, setEnrolling] = useState<{ studentId: string; name: string }>();
   const [enrolled, setEnrolled] = useState<string>();
-  const { registered, found } = (useLocation().state ?? {}) as { registered?: { studentId: string; admissionNumber: string; name: string; enrolledIn?: string; enrollProblem?: string }; found?: string };
-  const marked = registered?.studentId ?? found;
+  type Note = { studentId: string; admissionNumber: string; name: string; enrolledIn?: string; enrollProblem?: string };
+  const { registered, updated, found } = (useLocation().state ?? {}) as { registered?: Note; updated?: Note; found?: string };
+  const marked = registered?.studentId ?? updated?.studentId ?? found;
   const [params, setParams] = useSearchParams();
   const filter = params.get("q") ?? "";
 
@@ -91,6 +103,15 @@ export function Students() {
           </Text>
         </div>
       )}
+      {updated && !enrolled && (
+        <div className="notice" role="status">
+          <Icon name="check" />
+          <Text>
+            Saved the changes to {updated.name}, <strong>{updated.admissionNumber}</strong>.{updated.enrolledIn && ` The class is now ${updated.enrolledIn}.`}
+            {updated.enrollProblem && ` The class did not change: ${updated.enrollProblem}`}
+          </Text>
+        </div>
+      )}
       <div className="panel panel-flush">
         {count && (
           <div className="list-tools">
@@ -118,12 +139,15 @@ export function Students() {
                     {columns.map((column) => (
                       <Table.Th key={column}>{column}</Table.Th>
                     ))}
+                    <Table.Th>
+                      <VisuallyHidden>Edit</VisuallyHidden>
+                    </Table.Th>
                   </Table.Tr>
                 </Table.Thead>
                 <Table.Tbody>
                   {shown.length === 0 && (
                     <Table.Tr>
-                      <Table.Td colSpan={columns.length} className="no-match">
+                      <Table.Td colSpan={columns.length + 1} className="no-match">
                         No student matches "{filter.trim()}".
                       </Table.Td>
                     </Table.Tr>
@@ -149,6 +173,11 @@ export function Students() {
                       <Table.Td>{showDate(s.dateOfBirth)}</Table.Td>
                       <Table.Td>{s.guardian.name}</Table.Td>
                       <Table.Td className="num">{s.guardian.phone}</Table.Td>
+                      <Table.Td className="row-action">
+                        <Button component={Link} to={`/students/${s.studentId}/edit`} variant="subtle" size="compact-sm" aria-label={`Edit ${s.firstName} ${s.lastName}`}>
+                          Edit
+                        </Button>
+                      </Table.Td>
                     </Table.Tr>
                   ))}
                 </Table.Tbody>
