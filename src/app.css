@@ -1,0 +1,73 @@
+:root {
+  --paper: #fcfdff;
+  --ink: #1c2541;
+  --ruling: #d5e0f2;
+  --margin: #c42f3a;
+  --slate: #5d6784;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.navbar {
+  background: var(--paper);
+}
+
+@media (min-width: 48em) {
+  .navbar {
+    border-right: 2px solid var(--margin);
+    box-shadow: 3px 0 0 0 var(--paper), 5px 0 0 0 var(--margin);
+  }
+}
+
+.header {
+  background: var(--paper);
+  border-bottom: 1px solid var(--ruling);
+}
+
+.nav-link {
+  border-radius: var(--mantine-radius-sm);
+}
+
+.nav-link:focus-visible,
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--mantine-color-ink-7);
+  outline-offset: 2px;
+}
+
+.release {
+  color: var(--slate);
+  font-size: 0.8rem;
+}
+
+.ruled {
+  border-collapse: collapse;
+}
+
+.ruled th {
+  color: var(--slate);
+  font-weight: 600;
+  text-align: left;
+  border-bottom: 2px solid var(--ruling);
+}
+
+.ruled td,
+.ruled th {
+  padding: 0.6rem 0.75rem;
+}
+
+.ruled td {
+  border-bottom: 1px solid var(--ruling);
+}
+
+.page {
+  max-width: 72rem;
+}
+
+.lead {
+  color: var(--slate);
+  max-width: 34rem;
+}
