@@ -2,6 +2,7 @@ import { AppShell, Avatar, Burger, Group, NavLink, Text, UnstyledButton } from "
 import { useDisclosure } from "@mantine/hooks";
 import { NavLink as RouterLink, Route, Routes } from "react-router";
 import { Icon } from "./icons";
+import { Classes } from "./pages/Classes";
 import { Dashboard } from "./pages/Dashboard";
 import { NotFound } from "./pages/NotFound";
 import { RegisterStudent } from "./pages/RegisterStudent";
@@ -14,6 +15,7 @@ const release = (import.meta.env.VITE_RELEASE ?? "local").slice(0, 7);
 const pages = [
   { to: "/", label: "Dashboard", icon: "dashboard" },
   { to: "/students", label: "Students", icon: "students" },
+  { to: "/classes", label: "Classes", icon: "classes" },
 ] as const;
 
 export function App() {
@@ -89,6 +91,7 @@ function Shell({ user }: { user: User }) {
             <Route path="/" element={<Dashboard name={user.name} />} />
             <Route path="/students" element={<Students />} />
             <Route path="/students/new" element={<RegisterStudent />} />
+            <Route path="/classes" element={<Classes />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
