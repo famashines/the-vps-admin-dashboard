@@ -1,7 +1,9 @@
-import { AppShell, Avatar, Burger, Group, NavLink, Text, UnstyledButton } from "@mantine/core";
+import { ActionIcon, AppShell, Avatar, Burger, Group, NavLink, Text, UnstyledButton } from "@mantine/core";
+import { spotlight } from "@mantine/spotlight";
 import { useDisclosure } from "@mantine/hooks";
 import { Link, NavLink as RouterLink, Route, Routes } from "react-router";
 import { Icon } from "./icons";
+import { Search, SearchButton } from "./Search";
 import { Classes } from "./pages/Classes";
 import { Dashboard } from "./pages/Dashboard";
 import { NotFound } from "./pages/NotFound";
@@ -48,13 +50,21 @@ function Shell({ user }: { user: User }) {
       <AppShell.Header className="header">
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
           <Brand onClick={close} />
-          <Burger opened={opened} onClick={toggle} size="sm" aria-label={opened ? "Close the menu" : "Open the menu"} />
+          <Group gap={4} wrap="nowrap">
+            <ActionIcon variant="subtle" color="gray" size="lg" aria-label="Search" onClick={spotlight.open}>
+              <Icon name="search" />
+            </ActionIcon>
+            <Burger opened={opened} onClick={toggle} size="sm" aria-label={opened ? "Close the menu" : "Open the menu"} />
+          </Group>
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar className="navbar" aria-label="Main menu">
-        <AppShell.Section className="navbar-top" visibleFrom="sm">
-          <Brand onClick={close} />
+        <AppShell.Section className="navbar-top">
+          <div className="navbar-brand">
+            <Brand onClick={close} />
+          </div>
+          <SearchButton onOpen={close} />
         </AppShell.Section>
         <AppShell.Section grow className="navbar-links">
           {pages.map((page) => (
@@ -96,6 +106,7 @@ function Shell({ user }: { user: User }) {
           </Routes>
         </div>
       </AppShell.Main>
+      <Search />
     </AppShell>
   );
 }
