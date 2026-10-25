@@ -1,6 +1,6 @@
 import { AppShell, Avatar, Burger, Group, NavLink, Text, UnstyledButton } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
-import { NavLink as RouterLink, Route, Routes } from "react-router";
+import { Link, NavLink as RouterLink, Route, Routes } from "react-router";
 import { Icon } from "./icons";
 import { Classes } from "./pages/Classes";
 import { Dashboard } from "./pages/Dashboard";
@@ -26,12 +26,12 @@ export function App() {
   return <Shell user={session.user} />;
 }
 
-function Brand() {
+function Brand({ onClick }: { onClick: () => void }) {
   return (
-    <div className="brand">
-      <Text className="brand-name">the-vps</Text>
-      <Text className="brand-role">School office</Text>
-    </div>
+    <Link to="/" className="brand" onClick={onClick}>
+      <Text className="brand-name">VPS</Text>
+      <Text className="brand-role">The Vision Public School</Text>
+    </Link>
   );
 }
 
@@ -47,14 +47,14 @@ function Shell({ user }: { user: User }) {
     >
       <AppShell.Header className="header">
         <Group h="100%" px="md" justify="space-between" wrap="nowrap">
-          <Brand />
+          <Brand onClick={close} />
           <Burger opened={opened} onClick={toggle} size="sm" aria-label={opened ? "Close the menu" : "Open the menu"} />
         </Group>
       </AppShell.Header>
 
       <AppShell.Navbar className="navbar" aria-label="Main menu">
         <AppShell.Section className="navbar-top" visibleFrom="sm">
-          <Brand />
+          <Brand onClick={close} />
         </AppShell.Section>
         <AppShell.Section grow className="navbar-links">
           {pages.map((page) => (
