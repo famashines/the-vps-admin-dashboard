@@ -6,10 +6,10 @@ import { gradeLabel } from "../school.ts";
 import { EnrollDialog, type Enrollment } from "./EnrollDialog";
 import { signInUrl } from "../session";
 
-type Student = { studentId: string; admissionNumber: string; firstName: string; lastName: string; dateOfBirth: string; guardian: { name: string; phone: string }; enrollments: Enrollment[] };
+type Student = { studentId: string; admissionNumber: string; firstName: string; lastName: string; fatherName: string | null; dateOfBirth: string; guardian: { name: string; phone: string }; enrollments: Enrollment[] };
 type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; students: Student[] };
 
-const columns = ["Admission no.", "Name", "Class", "Date of birth", "Guardian", "Phone"];
+const columns = ["Admission no.", "Name", "Father name", "Class", "Date of birth", "Guardian", "Phone"];
 const showDate = (iso: string) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 
 function Empty({ status }: { status: "loading" | "failed" | "empty" }) {
@@ -41,7 +41,7 @@ export function Students() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [enrolling, setEnrolling] = useState<{ studentId: string; name: string }>();
   const [enrolled, setEnrolled] = useState<string>();
-  const registered = (useLocation().state as { registered?: { studentId: string; admissionNumber: string; name: string } } | null)?.registered;
+  const registered = (useLocation().state as { registered?: { studentId: string; admissionNumber: string; name: string; enrolledIn?: string; enrollProblem?: string } } | null)?.registered;
 
   useEffect(() => {
     fetch("/api/students")
@@ -76,7 +76,9 @@ export function Students() {
         <div className="notice" role="status">
           <Icon name="check" />
           <Text>
-            Registered {registered.name} as <strong>{registered.admissionNumber}</strong>.
+            Registered {registered.name} as <strong>{registered.admissionNumber}</strong>
+            {registered.enrolledIn ? ` in ${registered.enrolledIn}.` : "."}
+            {registered.enrollProblem && ` The enrollment did not work: ${registered.enrollProblem} Use Enroll in the list.`}
           </Text>
         </div>
       )}
@@ -87,7 +89,7 @@ export function Students() {
           </div>
         ) : (
           state.status === "loaded" && (
-            <Table.ScrollContainer minWidth={640} type="native">
+            <Table.ScrollContainer minWidth={760} type="native">
               <Table className="ruled" withRowBorders={false}>
                 <Table.Thead>
                   <Table.Tr>
@@ -103,6 +105,7 @@ export function Students() {
                       <Table.Td className="name">
                         {s.firstName} {s.lastName}
                       </Table.Td>
+                      <Table.Td>{s.fatherName}</Table.Td>
                       <Table.Td>
                         {s.enrollments[0] ? (
                           <span className="class-cell" title={s.enrollments[0].academicYearName}>

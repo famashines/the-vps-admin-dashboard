@@ -1,7 +1,8 @@
 import { Button, Group, NativeSelect, Radio, Text, TextInput, Title } from "@mantine/core";
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { toE164 } from "../phone.ts";
+import { gradeLabel, send, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 
 type FieldErrors = Record<string, string>;
@@ -9,6 +10,7 @@ type FieldErrors = Record<string, string>;
 const labels: Record<string, string> = {
   firstName: "First name",
   lastName: "Last name",
+  fatherName: "Father name",
   dateOfBirth: "Date of birth",
   gender: "Gender",
   "guardian.name": "Guardian name",
@@ -30,6 +32,20 @@ export function RegisterStudent() {
   const [problem, setProblem] = useState<string>();
   const [saving, setSaving] = useState(false);
   const form = useRef<HTMLFormElement>(null);
+  const [enrollKey] = useState(() => crypto.randomUUID());
+  const [year, setYear] = useState<Year | null>();
+  const [fatherName, setFatherName] = useState("");
+  const [relation, setRelation] = useState("father");
+  const [guardianName, setGuardianName] = useState("");
+  const [linked, setLinked] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/academic-years")
+      .then(async (r) => setYear(r.ok ? ((await r.json())[0] ?? null) : null))
+      .catch(() => setYear(null));
+  }, []);
+
+  const shownGuardian = linked && relation === "father" ? fatherName : guardianName;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,6 +54,7 @@ export function RegisterStudent() {
     const body = {
       firstName: value("firstName"),
       lastName: value("lastName"),
+      fatherName: value("fatherName"),
       dateOfBirth: value("dateOfBirth"),
       gender: value("gender"),
       guardian: { name: value("guardian.name"), relation: value("guardian.relation"), phone: toE164(value("guardian.phone")) },
@@ -53,7 +70,15 @@ export function RegisterStudent() {
       if (response.status === 401) return location.assign(signInUrl());
       const answer = await response.json().catch(() => ({}));
       if (response.ok) {
-        navigate("/students", { state: { registered: { studentId: answer.studentId, admissionNumber: answer.admissionNumber, name: `${body.firstName} ${body.lastName}` } } });
+        const registered: Record<string, string> = { studentId: answer.studentId, admissionNumber: answer.admissionNumber, name: `${body.firstName} ${body.lastName}` };
+        const classSectionId = value("classSectionId");
+        const chosen = year?.sections.find((s) => s.classSectionId === classSectionId);
+        if (chosen) {
+          const enrolled = await send("/api/enrollments", { studentId: answer.studentId, classSectionId }, enrollKey);
+          if (enrolled.ok) registered.enrolledIn = `${gradeLabel(chosen.grade)} ${chosen.section}`;
+          else registered.enrollProblem = enrolled.message;
+        }
+        navigate("/students", { state: { registered } });
         return;
       }
       if (response.status === 400 && Array.isArray(answer.fields)) {
@@ -99,6 +124,14 @@ export function RegisterStudent() {
             {line("firstName", "First name", { autoFocus: true, autoComplete: "off" })}
             {line("lastName", "Last name", { autoComplete: "off" })}
           </div>
+          {line("fatherName", "Father name", {
+            autoComplete: "off",
+            value: fatherName,
+            onChange: (event: { currentTarget: HTMLInputElement }) => {
+              clear("fatherName");
+              setFatherName(event.currentTarget.value);
+            },
+          })}
           <div className="pair">
             {line("dateOfBirth", "Date of birth", { type: "date", max: new Date().toISOString().slice(0, 10) })}
             <Radio.Group name="gender" label="Gender" error={errors.gender} onChange={() => clear("gender")} required withAsterisk={false}>
@@ -108,11 +141,39 @@ export function RegisterStudent() {
               </Group>
             </Radio.Group>
           </div>
+          <NativeSelect
+            name="classSectionId"
+            label="Class"
+            description={
+              year === null || (year && year.sections.length === 0) ? (
+                <>
+                  No class sections yet. Add them on the <Link to="/classes">Classes</Link> page, or enroll the student later.
+                </>
+              ) : year ? (
+                `Sections of ${year.name}. The student is enrolled right after the registration.`
+              ) : undefined
+            }
+            data={[
+              { value: "", label: "Choose later" },
+              ...(year?.sections ?? []).map((s) => ({ value: s.classSectionId, label: `${gradeLabel(s.grade)} ${s.section}` })),
+            ]}
+            disabled={!year || year.sections.length === 0}
+            classNames={{ input: "field-input" }}
+          />
         </fieldset>
         <fieldset className="entry">
           <legend>Guardian</legend>
           <Text className="entry-hint">The office uses this phone number to reach the family.</Text>
-          {line("guardian.name", "Guardian name", { autoComplete: "off" })}
+          {line("guardian.name", "Guardian name", {
+            autoComplete: "off",
+            value: shownGuardian,
+            description: linked && relation === "father" ? "Filled in from the father name. Change it if someone else is the guardian." : undefined,
+            onChange: (event: { currentTarget: HTMLInputElement }) => {
+              clear("guardian.name");
+              setLinked(false);
+              setGuardianName(event.currentTarget.value);
+            },
+          })}
           <div className="pair">
             <NativeSelect
               name="guardian.relation"
@@ -123,6 +184,16 @@ export function RegisterStudent() {
                 { value: "guardian", label: "Other guardian" },
               ]}
               error={errors["guardian.relation"]}
+              value={relation}
+              onChange={(event) => {
+                const next = event.currentTarget.value;
+                if (next === "father" && !guardianName.trim()) setLinked(true);
+                if (next !== "father" && linked) {
+                  setGuardianName(fatherName);
+                  setLinked(false);
+                }
+                setRelation(next);
+              }}
               classNames={{ input: "field-input" }}
               required
               withAsterisk={false}
