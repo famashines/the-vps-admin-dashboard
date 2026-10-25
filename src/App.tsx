@@ -1,9 +1,11 @@
-import { AppShell, Burger, Group, NavLink, Stack, Text, Title } from "@mantine/core";
+import { AppShell, Burger, Button, Group, NavLink, Stack, Text, Title } from "@mantine/core";
 import { useDisclosure } from "@mantine/hooks";
 import { NavLink as RouterLink, Route, Routes } from "react-router";
 import { Dashboard } from "./pages/Dashboard";
 import { NotFound } from "./pages/NotFound";
+import { NoAccess, SignIn } from "./pages/SignIn";
 import { Students } from "./pages/Students";
+import { signOut, useSession, type User } from "./session";
 
 const release = (import.meta.env.VITE_RELEASE ?? "local").slice(0, 7);
 
@@ -13,6 +15,14 @@ const pages = [
 ];
 
 export function App() {
+  const session = useSession();
+  if (session.status === "loading") return null;
+  if (session.status === "signed-out") return <SignIn />;
+  if (!session.user.roles.includes("admin")) return <NoAccess name={session.user.name} />;
+  return <Shell user={session.user} />;
+}
+
+function Shell({ user }: { user: User }) {
   const [opened, { toggle, close }] = useDisclosure();
 
   return (
@@ -32,7 +42,15 @@ export function App() {
               School office
             </Text>
           </Group>
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label={opened ? "Close the menu" : "Open the menu"} />
+          <Group gap="md">
+            <Text c="dimmed" size="sm" visibleFrom="sm">
+              {user.name}
+            </Text>
+            <Button variant="subtle" size="compact-sm" onClick={signOut}>
+              Sign out
+            </Button>
+            <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" aria-label={opened ? "Close the menu" : "Open the menu"} />
+          </Group>
         </Group>
       </AppShell.Header>
 

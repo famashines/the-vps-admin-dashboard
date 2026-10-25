@@ -71,3 +71,45 @@ button:focus-visible {
   color: var(--slate);
   max-width: 34rem;
 }
+
+.error {
+  color: var(--margin);
+}
+
+.copy-page {
+  min-height: 100vh;
+  background: var(--paper);
+  padding: 4rem 1.5rem 2rem calc(4.5rem + 1.5rem);
+  background-image: linear-gradient(
+    to right,
+    transparent 4.5rem,
+    var(--margin) 4.5rem,
+    var(--margin) calc(4.5rem + 2px),
+    transparent calc(4.5rem + 2px),
+    transparent calc(4.5rem + 5px),
+    var(--margin) calc(4.5rem + 5px),
+    var(--margin) calc(4.5rem + 7px),
+    transparent calc(4.5rem + 7px)
+  );
+}
+
+.copy-content {
+  max-width: 34rem;
+}
+
+@media (max-width: 30em) {
+  .copy-page {
+    padding-left: calc(2rem + 1.25rem);
+    background-image: linear-gradient(
+      to right,
+      transparent 2rem,
+      var(--margin) 2rem,
+      var(--margin) calc(2rem + 2px),
+      transparent calc(2rem + 2px),
+      transparent calc(2rem + 5px),
+      var(--margin) calc(2rem + 5px),
+      var(--margin) calc(2rem + 7px),
+      transparent calc(2rem + 7px)
+    );
+  }
+}
