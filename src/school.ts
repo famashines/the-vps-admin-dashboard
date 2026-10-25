@@ -9,8 +9,8 @@ export const GRADES = [
 
 export const gradeLabel = (grade: string) => GRADES.find(([value]) => value === grade)?.[1] ?? grade;
 
-export type Section = { classSectionId: string; grade: string; section: string; students: number };
-export type Year = { academicYearId: string; name: string; startsOn: string; endsOn: string; sections: Section[] };
+export type Section = { classSectionId: string; version: number; grade: string; section: string; students: number };
+export type Year = { academicYearId: string; version: number; name: string; startsOn: string; endsOn: string; sections: Section[] };
 export type Answer = { ok: true; data: any } | { ok: false; status: number; message: string; fields: Record<string, string> };
 
 export function schoolYearOf(today: Date) {
@@ -42,9 +42,9 @@ export function birthDateLimits(today: string, minAge = 2, maxAge = 25) {
 export const showDate = (iso: string) =>
   new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 
-export async function send(path: string, body: object, key: string): Promise<Answer> {
+export async function send(path: string, body: object, key: string, method: "POST" | "PUT" = "POST"): Promise<Answer> {
   try {
-    const response = await fetch(path, { method: "POST", headers: { "content-type": "application/json", "idempotency-key": key }, body: JSON.stringify(body) });
+    const response = await fetch(path, { method, headers: { "content-type": "application/json", "idempotency-key": key }, body: JSON.stringify(body) });
     if (response.status === 401) {
       location.assign(signInUrl());
       return { ok: false, status: 401, message: "Sign in again.", fields: {} };
@@ -58,3 +58,5 @@ export async function send(path: string, body: object, key: string): Promise<Ans
     return { ok: false, status: 0, message: "The change was not saved, because the connection failed. Try again.", fields: {} };
   }
 }
+
+export const isStale = (answer: Answer) => !answer.ok && answer.status === 409 && answer.message.includes("someone else");

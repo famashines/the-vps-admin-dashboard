@@ -7,7 +7,7 @@ import { Search, SearchButton } from "./Search";
 import { Classes } from "./pages/Classes";
 import { Dashboard } from "./pages/Dashboard";
 import { NotFound } from "./pages/NotFound";
-import { RegisterStudent } from "./pages/RegisterStudent";
+import { EditStudent, RegisterStudent } from "./pages/RegisterStudent";
 import { NoAccess, SignIn } from "./pages/SignIn";
 import { Students } from "./pages/Students";
 import { signOut, useSession, type User } from "./session";
@@ -101,6 +101,7 @@ function Shell({ user }: { user: User }) {
             <Route path="/" element={<Dashboard name={user.name} />} />
             <Route path="/students" element={<Students />} />
             <Route path="/students/new" element={<RegisterStudent />} />
+            <Route path="/students/:studentId/edit" element={<EditStudent />} />
             <Route path="/classes" element={<Classes />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

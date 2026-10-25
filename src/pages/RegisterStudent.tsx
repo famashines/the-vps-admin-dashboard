@@ -1,9 +1,10 @@
 import { Button, Group, NativeSelect, Radio, Text, TextInput, Title } from "@mantine/core";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "react-router";
-import { toE164 } from "../phone.ts";
-import { birthDateLimits, gradeLabel, send, todayInPakistan, type Year } from "../school.ts";
+import { Link, useNavigate, useParams } from "react-router";
+import { toE164, toLocal } from "../phone.ts";
+import { birthDateLimits, gradeLabel, isStale, send, todayInPakistan, type Year } from "../school.ts";
 import { signInUrl } from "../session";
+import type { Student } from "./Students";
 
 type FieldErrors = Record<string, string>;
 
@@ -25,25 +26,68 @@ const messageFor = (field: string, message: string) => {
   return `${labels[field] ?? field} ${message}.`;
 };
 
-export function RegisterStudent() {
+export function EditStudent() {
+  const { studentId } = useParams();
+  const [student, setStudent] = useState<Student | "missing" | "failed">();
+
+  useEffect(() => {
+    fetch("/api/students")
+      .then(async (r) => {
+        if (r.status === 401) return location.assign(signInUrl());
+        if (!r.ok) return setStudent("failed");
+        setStudent(((await r.json()) as Student[]).find((s) => s.studentId === studentId) ?? "missing");
+      })
+      .catch(() => setStudent("failed"));
+  }, [studentId]);
+
+  if (student === undefined) return <Text className="state-text">Loading the student.</Text>;
+  if (typeof student === "object") return <RegisterStudent student={student} />;
+  return (
+    <div className="panel state">
+      <Text className="state-title error" role="alert">
+        {student === "missing" ? "This student does not exist." : "The student did not load."}
+      </Text>
+      <Text className="state-text">{student === "missing" ? "Find the student in the list." : "Check the connection, then reload the page."}</Text>
+      <Button component={Link} to="/students" variant="default" mt="md">
+        Back to students
+      </Button>
+    </div>
+  );
+}
+
+const detailsOf = (s: Student) => ({
+  firstName: s.firstName,
+  lastName: s.lastName,
+  fatherName: s.fatherName,
+  dateOfBirth: s.dateOfBirth,
+  gender: s.gender,
+  guardian: { name: s.guardian.name, relation: s.guardian.relation, phone: s.guardian.phone },
+});
+
+export function RegisterStudent({ student }: { student?: Student }) {
   const navigate = useNavigate();
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [errors, setErrors] = useState<FieldErrors>({});
   const [problem, setProblem] = useState<string>();
+  const [stale, setStale] = useState(false);
   const [saving, setSaving] = useState(false);
   const form = useRef<HTMLFormElement>(null);
   const [enrollKey] = useState(() => crypto.randomUUID());
   const [year, setYear] = useState<Year | null>();
-  const [fatherName, setFatherName] = useState("");
-  const [relation, setRelation] = useState("father");
-  const [guardianName, setGuardianName] = useState("");
-  const [linked, setLinked] = useState(true);
+  const [fatherName, setFatherName] = useState(student?.fatherName ?? "");
+  const [relation, setRelation] = useState(student?.guardian.relation ?? "father");
+  const [guardianName, setGuardianName] = useState(student?.guardian.name ?? "");
+  const [linked, setLinked] = useState(!student || (student.guardian.relation === "father" && student.guardian.name === student.fatherName));
+  const enrollment = student?.enrollments[0];
 
   useEffect(() => {
     fetch("/api/academic-years")
-      .then(async (r) => setYear(r.ok ? ((await r.json())[0] ?? null) : null))
+      .then(async (r) => {
+        const years: Year[] = r.ok ? await r.json() : [];
+        setYear((enrollment ? years.find((y) => y.academicYearId === enrollment.academicYearId) : years[0]) ?? null);
+      })
       .catch(() => setYear(null));
-  }, []);
+  }, [enrollment?.academicYearId]);
 
   const shownGuardian = linked && relation === "father" ? fatherName : guardianName;
 
@@ -61,41 +105,40 @@ export function RegisterStudent() {
     };
     setSaving(true);
     setProblem(undefined);
-    try {
-      const response = await fetch("/api/students", {
-        method: "POST",
-        headers: { "content-type": "application/json", "idempotency-key": idempotencyKey },
-        body: JSON.stringify(body),
-      });
-      if (response.status === 401) return location.assign(signInUrl());
-      const answer = await response.json().catch(() => ({}));
-      if (response.ok) {
-        const registered: Record<string, string> = { studentId: answer.studentId, admissionNumber: answer.admissionNumber, name: `${body.firstName} ${body.lastName}` };
-        const classSectionId = value("classSectionId");
-        const chosen = year?.sections.find((s) => s.classSectionId === classSectionId);
-        if (chosen) {
-          const enrolled = await send("/api/enrollments", { studentId: answer.studentId, classSectionId }, enrollKey);
-          if (enrolled.ok) registered.enrolledIn = `${gradeLabel(chosen.grade)} ${chosen.section}`;
-          else registered.enrollProblem = enrolled.message;
-        }
-        navigate("/students", { state: { registered } });
-        return;
-      }
-      if (Array.isArray(answer.fields)) {
+    const unchanged = student && JSON.stringify(body) === JSON.stringify(detailsOf(student));
+    const answer = unchanged
+      ? { ok: true as const, data: student }
+      : student
+        ? await send(`/api/students/${student.studentId}`, { ...body, expectedVersion: student.version }, idempotencyKey, "PUT")
+        : await send("/api/students", body, idempotencyKey);
+    if (!answer.ok) {
+      setSaving(false);
+      if (answer.status === 401) return;
+      if (Object.keys(answer.fields).length) {
         const next: FieldErrors = {};
-        for (const f of answer.fields as { field: string; message: string }[]) next[f.field] ??= messageFor(f.field, f.message);
+        for (const [field, message] of Object.entries(answer.fields)) next[field] = messageFor(field, message);
         setErrors(next);
         setProblem("Check the marked fields.");
         const first = Object.keys(labels).find((name) => next[name]);
         form.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
         return;
       }
-      setProblem(answer.error ?? "The student was not saved. Try again.");
-    } catch {
-      setProblem("The student was not saved, because the connection failed. Try again.");
-    } finally {
-      setSaving(false);
+      setStale(isStale(answer));
+      setProblem(answer.message);
+      return;
     }
+    const note: Record<string, string> = { studentId: answer.data.studentId, admissionNumber: student?.admissionNumber ?? answer.data.admissionNumber, name: `${body.firstName} ${body.lastName}` };
+    const classSectionId = value("classSectionId");
+    const chosen = year?.sections.find((s) => s.classSectionId === classSectionId);
+    if (chosen && classSectionId !== enrollment?.classSectionId) {
+      const placed = enrollment
+        ? await send(`/api/enrollments/${enrollment.enrollmentId}`, { classSectionId, expectedVersion: enrollment.version }, enrollKey, "PUT")
+        : await send("/api/enrollments", { studentId: note.studentId, classSectionId }, enrollKey);
+      if (placed.ok) note.enrolledIn = `${gradeLabel(chosen.grade)} ${chosen.section}`;
+      else note.enrollProblem = placed.message;
+    }
+    setSaving(false);
+    navigate("/students", { state: student ? { updated: note } : { registered: note } });
   }
 
   const clear = (name: string) => errors[name] && setErrors(({ [name]: _, ...rest }) => rest);
@@ -107,22 +150,33 @@ export function RegisterStudent() {
     <div className="register">
       <header className="page-head">
         <div>
-          <Title order={1}>Register student</Title>
-          <Text className="lead">The admission number is given when you register.</Text>
+          <Title order={1}>{student ? "Edit student" : "Register student"}</Title>
+          {student ? (
+            <Text className="lead">
+              <span className="adm-mark">{student.admissionNumber}</span> The admission number does not change.
+            </Text>
+          ) : (
+            <Text className="lead">The admission number is given when you register.</Text>
+          )}
         </div>
       </header>
       {problem && (
-        <Text className="problem" role="alert">
-          {problem}
-        </Text>
+        <div className="problem" role="alert">
+          <Text>{problem}</Text>
+          {stale && (
+            <Button variant="default" size="compact-sm" onClick={() => location.reload()}>
+              Reload
+            </Button>
+          )}
+        </div>
       )}
       <form ref={form} onSubmit={submit} className="panel form-panel">
         <fieldset className="entry">
           <legend>Student</legend>
           <Text className="entry-hint">Write the names as on the B-form or birth certificate.</Text>
           <div className="pair">
-            {line("firstName", "First name", { autoFocus: true, autoComplete: "off" })}
-            {line("lastName", "Last name", { autoComplete: "off" })}
+            {line("firstName", "First name", { autoFocus: true, autoComplete: "off", defaultValue: student?.firstName })}
+            {line("lastName", "Last name", { autoComplete: "off", defaultValue: student?.lastName })}
           </div>
           {line("fatherName", "Father name", {
             autoComplete: "off",
@@ -133,8 +187,8 @@ export function RegisterStudent() {
             },
           })}
           <div className="pair">
-            {line("dateOfBirth", "Date of birth", { type: "date", ...birthDateLimits(todayInPakistan(new Date())) })}
-            <Radio.Group name="gender" label="Gender" error={errors.gender} onChange={() => clear("gender")} required withAsterisk={false}>
+            {line("dateOfBirth", "Date of birth", { type: "date", ...(student ? { defaultValue: student.dateOfBirth } : birthDateLimits(todayInPakistan(new Date()))) })}
+            <Radio.Group name="gender" label="Gender" defaultValue={student?.gender} error={errors.gender} onChange={() => clear("gender")} required withAsterisk={false}>
               <Group gap="lg" mt={10}>
                 <Radio value="female" label="Female" />
                 <Radio value="male" label="Male" />
@@ -142,19 +196,21 @@ export function RegisterStudent() {
             </Radio.Group>
           </div>
           <NativeSelect
+            key={year?.academicYearId}
             name="classSectionId"
             label="Class"
+            defaultValue={enrollment?.classSectionId}
             description={
               year === null || (year && year.sections.length === 0) ? (
                 <>
                   No class sections yet. Add them on the <Link to="/classes">Classes</Link> page, or enroll the student later.
                 </>
               ) : year ? (
-                `Sections of ${year.name}. The student is enrolled right after the registration.`
+                enrollment ? `Sections of ${year.name}.` : `Sections of ${year.name}. The student is enrolled right after you save.`
               ) : undefined
             }
             data={[
-              { value: "", label: "Choose later" },
+              ...(enrollment ? [] : [{ value: "", label: "Choose later" }]),
               ...(year?.sections ?? []).map((s) => ({ value: s.classSectionId, label: `${gradeLabel(s.grade)} ${s.section}` })),
             ]}
             disabled={!year || year.sections.length === 0}
@@ -198,12 +254,12 @@ export function RegisterStudent() {
               required
               withAsterisk={false}
             />
-            {line("guardian.phone", "Phone", { type: "tel", inputMode: "tel", placeholder: "0300 1234567", autoComplete: "off" })}
+            {line("guardian.phone", "Phone", { type: "tel", inputMode: "tel", placeholder: "0300 1234567", autoComplete: "off", defaultValue: student && toLocal(student.guardian.phone) })}
           </div>
         </fieldset>
         <Group gap="sm" className="form-actions">
           <Button type="submit" loading={saving}>
-            Register student
+            {student ? "Save changes" : "Register student"}
           </Button>
           <Button component={Link} to="/students" variant="default">
             Cancel
