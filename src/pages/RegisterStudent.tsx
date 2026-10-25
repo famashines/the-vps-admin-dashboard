@@ -2,7 +2,7 @@ import { Button, Group, NativeSelect, Radio, Text, TextInput, Title } from "@man
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { toE164 } from "../phone.ts";
-import { gradeLabel, send, type Year } from "../school.ts";
+import { birthDateLimits, gradeLabel, send, todayInPakistan, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 
 type FieldErrors = Record<string, string>;
@@ -20,7 +20,7 @@ const labels: Record<string, string> = {
 
 const messageFor = (field: string, message: string) => {
   if (field === "guardian.phone") return "Enter a mobile number, for example 0300 1234567.";
-  if (field === "dateOfBirth") return "Enter a real date.";
+  if (field === "dateOfBirth") return message.includes("years old") ? "The student must be 2 to 25 years old." : "Enter a real date.";
   if (message === "is required") return `${labels[field] ?? field} is required.`;
   return `${labels[field] ?? field} ${message}.`;
 };
@@ -81,7 +81,7 @@ export function RegisterStudent() {
         navigate("/students", { state: { registered } });
         return;
       }
-      if (response.status === 400 && Array.isArray(answer.fields)) {
+      if (Array.isArray(answer.fields)) {
         const next: FieldErrors = {};
         for (const f of answer.fields as { field: string; message: string }[]) next[f.field] ??= messageFor(f.field, f.message);
         setErrors(next);
@@ -133,7 +133,7 @@ export function RegisterStudent() {
             },
           })}
           <div className="pair">
-            {line("dateOfBirth", "Date of birth", { type: "date", max: new Date().toISOString().slice(0, 10) })}
+            {line("dateOfBirth", "Date of birth", { type: "date", ...birthDateLimits(todayInPakistan(new Date())) })}
             <Radio.Group name="gender" label="Gender" error={errors.gender} onChange={() => clear("gender")} required withAsterisk={false}>
               <Group gap="lg" mt={10}>
                 <Radio value="female" label="Female" />
