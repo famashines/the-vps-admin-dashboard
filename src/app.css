@@ -29,6 +29,8 @@ select:focus-visible,
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
+  color: inherit;
+  text-decoration: none;
 }
 
 .brand-name {
