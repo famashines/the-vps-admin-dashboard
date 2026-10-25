@@ -113,3 +113,85 @@ button:focus-visible {
     );
   }
 }
+
+.register {
+  max-width: 40rem;
+}
+
+.entry {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+
+.entry legend {
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 0.75rem;
+  padding: 0;
+}
+
+.pair {
+  display: grid;
+  gap: 1.25rem;
+}
+
+@media (min-width: 40em) {
+  .pair {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.line-input {
+  border: 0;
+  border-bottom: 2px solid var(--ruling);
+  border-radius: 0;
+  background: transparent;
+  padding-inline: 0.25rem;
+  font-size: 1.05rem;
+}
+
+.line-input:focus,
+.line-input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--mantine-color-ink-7);
+}
+
+.line-input[data-error] {
+  border-bottom-color: var(--margin);
+  color: var(--ink);
+}
+
+.mantine-InputWrapper-error,
+.mantine-RadioGroup-error {
+  color: var(--margin);
+  font-size: 0.875rem;
+}
+
+.notice {
+  color: var(--ink);
+  border-left: 3px solid var(--mantine-color-ink-7);
+  padding: 0.25rem 0 0.25rem 0.75rem;
+}
+
+.ruled tr.new td {
+  animation: ink-fade 2.4s ease-out;
+}
+
+@keyframes ink-fade {
+  from {
+    background: var(--mantine-color-ink-0);
+  }
+  to {
+    background: transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ruled tr.new td {
+    animation: none;
+    background: var(--mantine-color-ink-0);
+  }
+}

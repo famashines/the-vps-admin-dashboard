@@ -3,6 +3,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { NavLink as RouterLink, Route, Routes } from "react-router";
 import { Dashboard } from "./pages/Dashboard";
 import { NotFound } from "./pages/NotFound";
+import { RegisterStudent } from "./pages/RegisterStudent";
 import { NoAccess, SignIn } from "./pages/SignIn";
 import { Students } from "./pages/Students";
 import { signOut, useSession, type User } from "./session";
@@ -62,7 +63,7 @@ function Shell({ user }: { user: User }) {
                 key={page.to}
                 component={RouterLink}
                 to={page.to}
-                end
+                end={page.to === "/"}
                 label={page.label}
                 className="nav-link"
                 onClick={close}
@@ -78,6 +79,7 @@ function Shell({ user }: { user: User }) {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/students" element={<Students />} />
+            <Route path="/students/new" element={<RegisterStudent />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
