@@ -532,3 +532,103 @@ select:focus-visible,
     background: var(--mantine-color-ink-0);
   }
 }
+
+.years {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.year-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.year-count {
+  color: var(--slate);
+  font-size: 0.9rem;
+}
+
+.board {
+  margin: 0 0 1rem;
+  border-top: 1px solid var(--ruling);
+}
+
+.board-row {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--ruling);
+}
+
+.board-row dt {
+  color: var(--slate);
+  font-weight: 600;
+}
+
+.board-row dd {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.2rem 0.35rem 0.2rem 0.65rem;
+  border: 1px solid var(--ruling);
+  border-radius: 6px;
+  background: var(--sheet);
+}
+
+.tag-name {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tag-count {
+  min-width: 1.6rem;
+  text-align: center;
+  padding: 0.05rem 0.4rem;
+  border-radius: 4px;
+  background: var(--wash);
+  color: var(--royal);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.board-empty {
+  padding: 0.75rem 0 1rem;
+}
+
+.add-section,
+.year-fields {
+  display: grid;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+@media (min-width: 40em) {
+  .add-section {
+    grid-template-columns: 12rem 1fr auto;
+  }
+  .year-fields {
+    grid-template-columns: 8rem 1fr 1fr auto;
+  }
+}
+
+.year-fields {
+  margin-top: 1rem;
+}
+
+.class-cell {
+  font-weight: 600;
+  white-space: nowrap;
+}

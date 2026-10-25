@@ -2,12 +2,14 @@ import { Button, Table, Text, Title } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import { Icon } from "../icons";
+import { gradeLabel } from "../school.ts";
+import { EnrollDialog, type Enrollment } from "./EnrollDialog";
 import { signInUrl } from "../session";
 
-type Student = { studentId: string; admissionNumber: string; firstName: string; lastName: string; dateOfBirth: string; guardian: { name: string; phone: string } };
+type Student = { studentId: string; admissionNumber: string; firstName: string; lastName: string; dateOfBirth: string; guardian: { name: string; phone: string }; enrollments: Enrollment[] };
 type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; students: Student[] };
 
-const columns = ["Admission no.", "Name", "Date of birth", "Guardian", "Phone"];
+const columns = ["Admission no.", "Name", "Class", "Date of birth", "Guardian", "Phone"];
 const showDate = (iso: string) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${iso}T00:00:00Z`));
 
 function Empty({ status }: { status: "loading" | "failed" | "empty" }) {
@@ -37,6 +39,8 @@ function Empty({ status }: { status: "loading" | "failed" | "empty" }) {
 
 export function Students() {
   const [state, setState] = useState<State>({ status: "loading" });
+  const [enrolling, setEnrolling] = useState<{ studentId: string; name: string }>();
+  const [enrolled, setEnrolled] = useState<string>();
   const registered = (useLocation().state as { registered?: { studentId: string; admissionNumber: string; name: string } } | null)?.registered;
 
   useEffect(() => {
@@ -62,7 +66,13 @@ export function Students() {
           Register student
         </Button>
       </header>
-      {registered && (
+      {enrolled && (
+        <div className="notice" role="status">
+          <Icon name="check" />
+          <Text>{enrolled}</Text>
+        </div>
+      )}
+      {registered && !enrolled && (
         <div className="notice" role="status">
           <Icon name="check" />
           <Text>
@@ -93,6 +103,17 @@ export function Students() {
                       <Table.Td className="name">
                         {s.firstName} {s.lastName}
                       </Table.Td>
+                      <Table.Td>
+                        {s.enrollments[0] ? (
+                          <span className="class-cell" title={s.enrollments[0].academicYearName}>
+                            {gradeLabel(s.enrollments[0].grade)} {s.enrollments[0].section}
+                          </span>
+                        ) : (
+                          <Button variant="subtle" size="compact-sm" onClick={() => setEnrolling({ studentId: s.studentId, name: `${s.firstName} ${s.lastName}` })}>
+                            Enroll
+                          </Button>
+                        )}
+                      </Table.Td>
                       <Table.Td>{showDate(s.dateOfBirth)}</Table.Td>
                       <Table.Td>{s.guardian.name}</Table.Td>
                       <Table.Td className="num">{s.guardian.phone}</Table.Td>
@@ -104,6 +125,17 @@ export function Students() {
           )
         )}
       </div>
+      <EnrollDialog
+        student={enrolling}
+        onClose={() => setEnrolling(undefined)}
+        onEnrolled={(enrollment) => {
+          if (state.status === "loaded" && enrolling) {
+            setState({ status: "loaded", students: state.students.map((s) => (s.studentId === enrolling.studentId ? { ...s, enrollments: [enrollment, ...s.enrollments] } : s)) });
+            setEnrolled(`Enrolled ${enrolling.name} in ${gradeLabel(enrollment.grade)} ${enrollment.section}, ${enrollment.academicYearName}.`);
+          }
+          setEnrolling(undefined);
+        }}
+      />
     </>
   );
 }
