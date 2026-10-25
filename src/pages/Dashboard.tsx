@@ -23,7 +23,7 @@ const actions = [
   { to: "/classes", icon: "classes", title: "Set up classes", text: "Open a school year and add its sections." },
 ] as const;
 
-const coming = ["Fee structure", "Cash payments and receipts", "Fee reports and defaulters"];
+const coming = ["Fee reports and defaulters"];
 
 async function getJson(path: string) {
   const response = await fetch(path);
