@@ -927,6 +927,23 @@ select:focus-visible,
   cursor: progress;
 }
 
+@media (max-width: 40em) {
+  .ladder .board-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  .ladder .board-row dt {
+    padding-top: 0;
+  }
+  .ladder .board-row dd {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr));
+  }
+  .grade {
+    min-width: 0;
+  }
+}
+
 .year-tools {
   align-items: center;
 }
@@ -1014,6 +1031,12 @@ select:focus-visible,
 
 .fact-line {
   display: block;
+}
+
+.lead a,
+.facts a {
+  color: var(--royal);
+  text-underline-offset: 2px;
 }
 
 @media (max-width: 48em) {
