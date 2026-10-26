@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { birthDateLimits, gradeLabel, schoolYearOf, todayInPakistan, yearStarting } from "./school.ts";
+import { birthDateLimits, classGroups, gradeLabel, schoolYearOf, stageOf, todayInPakistan, yearStarting } from "./school.ts";
 
 test("the school year runs from April to March, in Pakistan time", () => {
   assert.deepEqual(schoolYearOf(new Date("2026-10-25T12:00:00Z")), { name: "2026-27", startsOn: "2026-04-01", endsOn: "2027-03-31" });
@@ -9,9 +9,19 @@ test("the school year runs from April to March, in Pakistan time", () => {
   assert.equal(yearStarting(2099).name, "2099-00");
 });
 
-test("grades have plain names", () => {
-  assert.equal(gradeLabel("prep"), "Prep");
+test("grades have plain names and are in four stages", () => {
+  assert.equal(gradeLabel("kg-1"), "KG-1");
   assert.equal(gradeLabel("class-10"), "Class 10");
+  assert.deepEqual(["playgroup", "kg-2", "class-1", "class-5", "class-6", "class-8", "class-9", "class-10"].map(stageOf), ["Pre-primary", "Pre-primary", "Primary", "Primary", "Middle", "Middle", "Secondary", "Secondary"]);
+});
+
+test("class pickers group the classes by stage, in grade order", () => {
+  const c = (classId: string, grade: string) => ({ classId, version: 1, grade, students: 0 });
+  assert.deepEqual(classGroups([c("a", "class-10"), c("b", "kg-1"), c("d", "class-2"), c("e", "class-1")], undefined, ", 2026-27"), [
+    { group: "Pre-primary, 2026-27", items: [{ value: "b", label: "KG-1" }] },
+    { group: "Primary, 2026-27", items: [{ value: "e", label: "Class 1" }, { value: "d", label: "Class 2" }] },
+    { group: "Secondary, 2026-27", items: [{ value: "a", label: "Class 10" }] },
+  ]);
 });
 
 test("a date of birth gives an age of 2 to 25 on the day", () => {

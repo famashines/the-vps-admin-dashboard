@@ -20,7 +20,7 @@ async function getJson(path: string) {
 
 const classOf = (student: Student, account: Account) => {
   const e = student.enrollments.find((x) => x.academicYearId === account.academicYearId);
-  return `${e ? `${gradeLabel(e.grade)} ${e.section}` : gradeLabel(account.grade)}, ${account.academicYearName}`;
+  return `${gradeLabel(e?.grade ?? account.grade)}, ${account.academicYearName}`;
 };
 
 export function balanceText(balance: number) {
@@ -241,7 +241,7 @@ export function StudentFees({ user }: { user: User }) {
           </Title>
           <Text className="lead">
             <span className="adm-mark">{student.admissionNumber}</span>
-            {enrollment ? `${gradeLabel(enrollment.grade)} ${enrollment.section}, ${enrollment.academicYearName}` : "Not in a class yet"}
+            {enrollment ? `${gradeLabel(enrollment.grade)}, ${enrollment.academicYearName}` : "Not in a class yet"}
           </Text>
         </div>
         {account && (

@@ -164,7 +164,7 @@ export function Fees() {
         {head}
         <div className="panel state">
           <Text className="state-title">No school year yet.</Text>
-          <Text className="state-text">Open a school year and add its sections. Then set the fees of each grade.</Text>
+          <Text className="state-text">Open a school year and its classes. Then set the fees of each grade.</Text>
           <Button component={Link} to="/classes" mt="md">
             Go to classes
           </Button>
@@ -173,11 +173,10 @@ export function Fees() {
     );
 
   const schedules = state.schedules.filter((s) => s.academicYearId === year.academicYearId);
-  const grades = GRADES.filter(([g]) => year.sections.some((s) => s.grade === g) || schedules.some((s) => s.grade === g));
+  const grades = GRADES.filter(([g]) => year.classes.some((c) => c.grade === g) || schedules.some((s) => s.grade === g));
   const scheduleOf = (grade?: string) => schedules.find((s) => s.grade === grade);
   const students = new Map(state.students.map((s) => [s.studentId, s]));
   const accounts = state.accounts.filter((a) => a.academicYearId === year.academicYearId).sort((a, b) => (students.get(a.studentId)?.admissionNumber ?? "").localeCompare(students.get(b.studentId)?.admissionNumber ?? ""));
-  const sectionOf = (a: AccountSummary) => year.sections.find((s) => s.classSectionId === a.classSectionId);
 
   return (
     <>
@@ -194,11 +193,11 @@ export function Fees() {
             <Title order={2} className="panel-title" id="schedule-title">
               Fee schedule {year.name}
             </Title>
-            <Text className="panel-text">Fees in rupees for each grade that has sections in {year.name}.</Text>
+            <Text className="panel-text">Fees in rupees for each grade that has a class in {year.name}.</Text>
           </div>
           {grades.length === 0 ? (
             <Text className="state-text ledger-empty">
-              No sections yet. Add them on the <Link to="/classes">Classes</Link> page.
+              No classes yet. Open them on the <Link to="/classes">Classes</Link> page.
             </Text>
           ) : (
             <Table.ScrollContainer minWidth={560} type="native">
@@ -272,12 +271,11 @@ export function Fees() {
                 <Table.Tbody>
                   {accounts.map((a) => {
                     const s = students.get(a.studentId);
-                    const section = sectionOf(a);
                     return (
                       <Table.Tr key={a.accountId}>
                         <Table.Td className="adm">{s?.admissionNumber}</Table.Td>
                         <Table.Td className="name">{s ? `${s.firstName} ${s.lastName}` : "Unknown student"}</Table.Td>
-                        <Table.Td>{section ? `${gradeLabel(section.grade)} ${section.section}` : gradeLabel(a.grade)}</Table.Td>
+                        <Table.Td>{gradeLabel(a.grade)}</Table.Td>
                         <Table.Td className="money">{showMoney(a.charged)}</Table.Td>
                         <Table.Td className="money">{showMoney(a.paid)}</Table.Td>
                         <Table.Td className={`money owed${a.balance.amount < 0 ? " is-credit" : a.balance.amount === 0 ? " is-clear" : ""}`}>{balanceText(a.balance.amount)}</Table.Td>

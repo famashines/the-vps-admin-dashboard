@@ -4,6 +4,7 @@ import { useDisclosure } from "@mantine/hooks";
 import { Link, NavLink as RouterLink, Route, Routes } from "react-router";
 import { Icon } from "./icons";
 import { Search, SearchButton } from "./Search";
+import { ClassPage } from "./pages/ClassPage";
 import { Classes } from "./pages/Classes";
 import { Dashboard } from "./pages/Dashboard";
 import { Fees } from "./pages/Fees";
@@ -11,6 +12,7 @@ import { NotFound } from "./pages/NotFound";
 import { EditStudent, RegisterStudent } from "./pages/RegisterStudent";
 import { NoAccess, SignIn } from "./pages/SignIn";
 import { StudentFees } from "./pages/StudentFees";
+import { StudentPage } from "./pages/StudentPage";
 import { Students } from "./pages/Students";
 import { signOut, useSession, type User } from "./session";
 
@@ -104,10 +106,12 @@ function Shell({ user }: { user: User }) {
             <Route path="/" element={<Dashboard name={user.name} />} />
             <Route path="/students" element={<Students />} />
             <Route path="/students/new" element={<RegisterStudent />} />
+            <Route path="/students/:studentId" element={<StudentPage />} />
             <Route path="/students/:studentId/edit" element={<EditStudent />} />
             <Route path="/students/:studentId/fees" element={<StudentFees user={user} />} />
             <Route path="/fees" element={<Fees />} />
             <Route path="/classes" element={<Classes />} />
+            <Route path="/classes/:classId" element={<ClassPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </div>

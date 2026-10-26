@@ -1,12 +1,13 @@
-import { Button, Group, Modal, NativeSelect, Text, TextInput, Title } from "@mantine/core";
+import { Button, Group, Modal, Text, TextInput, Title } from "@mantine/core";
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Link, useLocation } from "react-router";
 import { Icon } from "../icons";
-import { GRADES, gradeLabel, isStale, schoolYearOf, send, showDate, yearStarting, type Answer, type Section, type Year } from "../school.ts";
+import { gradeLabel, isStale, schoolYearOf, send, showDate, STAGES, yearStarting, type Answer, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 
 type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; years: Year[] };
 
-const fieldNames: Record<string, string> = { name: "Name", startsOn: "Starts on", endsOn: "Ends on", section: "Section" };
+const fieldNames: Record<string, string> = { name: "Name", startsOn: "Starts on", endsOn: "Ends on" };
 
 function useKey() {
   const [key, setKey] = useState(() => crypto.randomUUID());
@@ -58,43 +59,6 @@ function OpenYear({ suggested, onOpened }: { suggested: { name: string; startsOn
           Open {suggested.name}
         </Button>
       </div>
-    </form>
-  );
-}
-
-function AddSection({ year, onResult }: { year: Year; onResult: (added: string | undefined) => void }) {
-  const [key, nextKey] = useKey();
-  const [problem, setProblem] = useState<string>();
-  const [saving, setSaving] = useState(false);
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const body = { academicYearId: year.academicYearId, grade: String(data.get("grade")), section: String(data.get("section")).trim() };
-    setSaving(true);
-    onResult(undefined);
-    const answer = await send("/api/class-sections", body, key);
-    setSaving(false);
-    if (answer.ok) {
-      nextKey();
-      setProblem(undefined);
-      const input = form.elements.namedItem("section") as HTMLInputElement;
-      input.value = "";
-      input.focus();
-      onResult(`${gradeLabel(body.grade)} ${body.section}`);
-      return;
-    }
-    setProblem(answer.fields.section ? "Enter a section name of 1 to 20 characters." : answer.message);
-  }
-
-  return (
-    <form className="add-section" onSubmit={submit} aria-label={`Add a section to ${year.name}`}>
-      <NativeSelect name="grade" label="Grade" data={GRADES.map(([value, label]) => ({ value, label }))} classNames={{ input: "field-input" }} />
-      <TextInput name="section" label="Section" placeholder="A" maxLength={20} autoComplete="off" classNames={{ input: "field-input" }} required withAsterisk={false} error={problem} />
-      <Button type="submit" variant="light" loading={saving} leftSection={<Icon name="add" size={16} />}>
-        Add section
-      </Button>
     </form>
   );
 }
@@ -153,57 +117,6 @@ function EditDialog({ title, opened, onClose, onSave, children }: {
   );
 }
 
-function EditSection({ section, onClose, onSaved }: { section: Section | undefined; onClose: () => void; onSaved: (label: string) => void }) {
-  const [shown, setShown] = useState(section);
-  useEffect(() => {
-    if (section) setShown(section);
-  }, [section]);
-  const s = section ?? shown;
-  if (!s) return null;
-  const locked = s.students > 0;
-
-  return (
-    <EditDialog
-      title={`Edit ${gradeLabel(s.grade)} ${s.section}`}
-      opened={!!section}
-      onClose={onClose}
-      onSave={async (data, key) => {
-        const body = { grade: locked ? s.grade : String(data.get("grade")), section: String(data.get("section")).trim(), expectedVersion: s.version };
-        const answer = await send(`/api/class-sections/${s.classSectionId}`, body, key, "PUT");
-        if (answer.ok) onSaved(`${gradeLabel(body.grade)} ${body.section}`);
-        return answer;
-      }}
-    >
-      {(fields) => (
-        <>
-          <NativeSelect
-            name="grade"
-            label="Grade"
-            defaultValue={s.grade}
-            disabled={locked}
-            description={locked ? `Move its ${s.students} ${s.students === 1 ? "student" : "students"} to another section first to change the grade.` : undefined}
-            error={fields.grade}
-            data={GRADES.map(([value, label]) => ({ value, label }))}
-            classNames={{ input: "field-input" }}
-          />
-          <TextInput
-            name="section"
-            label="Section"
-            defaultValue={s.section}
-            maxLength={20}
-            autoComplete="off"
-            data-autofocus
-            error={fields.section && "Enter a section name of 1 to 20 characters."}
-            classNames={{ input: "field-input" }}
-            required
-            withAsterisk={false}
-          />
-        </>
-      )}
-    </EditDialog>
-  );
-}
-
 function EditYear({ year, opened, onClose, onSaved }: { year: Year; opened: boolean; onClose: () => void; onSaved: () => void }) {
   return (
     <EditDialog
@@ -230,13 +143,31 @@ function EditYear({ year, opened, onClose, onSaved }: { year: Year; opened: bool
   );
 }
 
+function OpenGrade({ year, grade, onDone }: { year: Year; grade: string; onDone: (text: string, ok: boolean) => void }) {
+  const [key] = useState(() => crypto.randomUUID());
+  const [saving, setSaving] = useState(false);
+  const label = gradeLabel(grade);
+
+  async function open() {
+    setSaving(true);
+    const answer = await send("/api/classes", { academicYearId: year.academicYearId, grade }, key);
+    setSaving(false);
+    onDone(answer.ok ? `Opened ${label}.` : `${label} was not opened. ${answer.message}`, answer.ok);
+  }
+
+  return (
+    <button type="button" className="grade grade-closed" onClick={open} disabled={saving} aria-label={`Open the class ${label} in ${year.name}`}>
+      <span className="grade-name">{label}</span>
+      <span className="grade-note">{saving ? "Opening" : "Open class"}</span>
+    </button>
+  );
+}
+
 function YearPanel({ year, onChanged }: { year: Year; onChanged: () => void }) {
-  const [added, setAdded] = useState<string>();
-  const [editing, setEditing] = useState<Section>();
   const [editingYear, setEditingYear] = useState(false);
   const [saved, setSaved] = useState<string>();
-  const grades = GRADES.filter(([grade]) => year.sections.some((s) => s.grade === grade));
-  const students = year.sections.reduce((sum, s) => sum + s.students, 0);
+  const [failed, setFailed] = useState<string>();
+  const students = year.classes.reduce((sum, c) => sum + c.students, 0);
 
   return (
     <section className="panel year" aria-labelledby={`year-${year.academicYearId}`}>
@@ -251,66 +182,65 @@ function YearPanel({ year, onChanged }: { year: Year; onChanged: () => void }) {
         </div>
         <Group gap="sm" wrap="nowrap" className="year-tools">
           <Text className="year-count">
-            {year.sections.length} {year.sections.length === 1 ? "section" : "sections"}, {students} {students === 1 ? "student" : "students"}
+            {year.classes.length} {year.classes.length === 1 ? "class" : "classes"}, {students} {students === 1 ? "student" : "students"}
           </Text>
           <Button variant="subtle" size="compact-sm" onClick={() => setEditingYear(true)} aria-label={`Edit the school year ${year.name}`}>
             Edit year
           </Button>
         </Group>
       </header>
-      {grades.length === 0 ? (
-        <Text className="state-text board-empty">No sections yet. Add the first one below, for example Class 1, section A.</Text>
-      ) : (
-        <dl className="board">
-          {grades.map(([grade, label]) => (
-            <div className="board-row" key={grade}>
-              <dt>{label}</dt>
-              <dd>
-                {year.sections
-                  .filter((s) => s.grade === grade)
-                  .map((s) => (
-                    <button type="button" className="tag" key={s.classSectionId} onClick={() => setEditing(s)} aria-label={`Edit ${label} ${s.section}, ${s.students} ${s.students === 1 ? "student" : "students"}`}>
-                      <span className="tag-name">{s.section}</span>
-                      <span className="tag-count">{s.students}</span>
-                    </button>
-                  ))}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      )}
-      {(added || saved) && (
+      {year.classes.length === 0 && <Text className="state-text board-empty">No classes yet. Open a class for each grade that the school teaches this year.</Text>}
+      <dl className="board ladder">
+        {STAGES.map(([stage, grades]) => (
+          <div className="board-row" key={stage}>
+            <dt>{stage}</dt>
+            <dd>
+              {grades.map((grade) => {
+                const c = year.classes.find((x) => x.grade === grade);
+                return c ? (
+                  <Link to={`/classes/${c.classId}`} className="grade" key={grade}>
+                    <span className="grade-name">{gradeLabel(grade)}</span>
+                    <span className="grade-note">
+                      {c.students} {c.students === 1 ? "student" : "students"}
+                    </span>
+                  </Link>
+                ) : (
+                  <OpenGrade
+                    key={grade}
+                    year={year}
+                    grade={grade}
+                    onDone={(text, ok) => {
+                      setSaved(ok ? text : undefined);
+                      setFailed(ok ? undefined : text);
+                      if (ok) onChanged();
+                    }}
+                  />
+                );
+              })}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {saved && (
         <div className="notice" role="status">
           <Icon name="check" />
-          <Text>{added ? `Added ${added}.` : saved}</Text>
+          <Text>{saved}</Text>
         </div>
       )}
-      <EditSection
-        section={editing}
-        onClose={() => setEditing(undefined)}
-        onSaved={(label) => {
-          setEditing(undefined);
-          setAdded(undefined);
-          setSaved(`Saved ${label}.`);
-          onChanged();
-        }}
-      />
+      {failed && (
+        <Text className="error" role="alert">
+          {failed}
+        </Text>
+      )}
       <EditYear
         year={year}
         opened={editingYear}
         onClose={() => setEditingYear(false)}
         onSaved={() => {
           setEditingYear(false);
+          setFailed(undefined);
           setSaved("Saved the school year.");
           onChanged();
-        }}
-      />
-      <AddSection
-        year={year}
-        onResult={(label) => {
-          setSaved(undefined);
-          setAdded(label);
-          if (label) onChanged();
         }}
       />
     </section>
@@ -319,6 +249,7 @@ function YearPanel({ year, onChanged }: { year: Year; onChanged: () => void }) {
 
 export function Classes() {
   const [state, setState] = useState<State>({ status: "loading" });
+  const { removed } = (useLocation().state ?? {}) as { removed?: string };
 
   const load = useCallback(() => {
     fetch("/api/academic-years")
@@ -339,9 +270,15 @@ export function Classes() {
       <header className="page-head">
         <div>
           <Title order={1}>Classes</Title>
-          <Text className="lead">School years and their class sections. Students are enrolled into a section on the Students page.</Text>
+          <Text className="lead">One class for each grade in a school year. Open a class to see its students.</Text>
         </div>
       </header>
+      {removed && (
+        <div className="notice" role="status">
+          <Icon name="check" />
+          <Text>Removed {removed}.</Text>
+        </div>
+      )}
       {state.status === "loading" && <Text className="state-text">Loading school years.</Text>}
       {state.status === "failed" && (
         <div className="panel state">
@@ -359,7 +296,7 @@ export function Classes() {
           {years.length === 0 && (
             <div className="panel state">
               <Text className="state-title">No school year yet.</Text>
-              <Text className="state-text">Open the first school year below. Then add its class sections.</Text>
+              <Text className="state-text">Open the first school year below. Then open its classes.</Text>
             </div>
           )}
           {years.map((year) => (

@@ -2,7 +2,7 @@ import { Button, Group, NativeSelect, Radio, Text, TextInput, Title } from "@man
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toE164, toLocal } from "../phone.ts";
-import { birthDateLimits, gradeLabel, isStale, send, todayInPakistan, type Year } from "../school.ts";
+import { birthDateLimits, classGroups, gradeLabel, isStale, send, todayInPakistan, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 import type { Student } from "./Students";
 
@@ -128,13 +128,13 @@ export function RegisterStudent({ student }: { student?: Student }) {
       return;
     }
     const note: Record<string, string> = { studentId: answer.data.studentId, admissionNumber: student?.admissionNumber ?? answer.data.admissionNumber, name: `${body.firstName} ${body.lastName}` };
-    const classSectionId = value("classSectionId");
-    const chosen = year?.sections.find((s) => s.classSectionId === classSectionId);
-    if (chosen && classSectionId !== enrollment?.classSectionId) {
+    const classId = value("classId");
+    const chosen = year?.classes.find((c) => c.classId === classId);
+    if (chosen && classId !== enrollment?.classId) {
       const placed = enrollment
-        ? await send(`/api/enrollments/${enrollment.enrollmentId}`, { classSectionId, expectedVersion: enrollment.version }, enrollKey, "PUT")
-        : await send("/api/enrollments", { studentId: note.studentId, classSectionId }, enrollKey);
-      if (placed.ok) note.enrolledIn = `${gradeLabel(chosen.grade)} ${chosen.section}`;
+        ? await send(`/api/enrollments/${enrollment.enrollmentId}`, { classId, expectedVersion: enrollment.version }, enrollKey, "PUT")
+        : await send("/api/enrollments", { studentId: note.studentId, classId }, enrollKey);
+      if (placed.ok) note.enrolledIn = gradeLabel(chosen.grade);
       else note.enrollProblem = placed.message;
     }
     setSaving(false);
@@ -197,23 +197,23 @@ export function RegisterStudent({ student }: { student?: Student }) {
           </div>
           <NativeSelect
             key={year?.academicYearId}
-            name="classSectionId"
+            name="classId"
             label="Class"
-            defaultValue={enrollment?.classSectionId}
+            defaultValue={enrollment?.classId}
             description={
-              year === null || (year && year.sections.length === 0) ? (
+              year === null || (year && year.classes.length === 0) ? (
                 <>
-                  No class sections yet. Add them on the <Link to="/classes">Classes</Link> page, or enroll the student later.
+                  No classes yet. Open them on the <Link to="/classes">Classes</Link> page, or enroll the student later.
                 </>
               ) : year ? (
-                enrollment ? `Sections of ${year.name}.` : `Sections of ${year.name}. The student is enrolled right after you save.`
+                enrollment ? `Classes of ${year.name}.` : `Classes of ${year.name}. The student is enrolled right after you save.`
               ) : undefined
             }
             data={[
               ...(enrollment ? [] : [{ value: "", label: "Choose later" }]),
-              ...(year?.sections ?? []).map((s) => ({ value: s.classSectionId, label: `${gradeLabel(s.grade)} ${s.section}` })),
+              ...classGroups(year?.classes ?? []),
             ]}
-            disabled={!year || year.sections.length === 0}
+            disabled={!year || year.classes.length === 0}
             classNames={{ input: "field-input" }}
           />
         </fieldset>

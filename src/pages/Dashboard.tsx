@@ -20,7 +20,7 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 const actions = [
   { to: "/students/new", icon: "add", title: "Register a student", text: "The admission number is given on save." },
   { to: "/students", icon: "students", title: "Find a student", text: "Filter by name, father name or phone." },
-  { to: "/classes", icon: "classes", title: "Set up classes", text: "Open a school year and add its sections." },
+  { to: "/classes", icon: "classes", title: "Set up classes", text: "Open a school year and a class for each grade." },
 ] as const;
 
 const coming = ["Fee reports and defaulters"];
@@ -40,7 +40,7 @@ function YearStatus({ students, years }: { students: Student[]; years: Year[] })
         <Title order={2} className="panel-title">
           No school year yet
         </Title>
-        <Text className="panel-text">Open the first school year and add its class sections. Then students can be enrolled.</Text>
+        <Text className="panel-text">Open the first school year and its classes. Then students can be enrolled.</Text>
         <Button component={Link} to="/classes" mt="md" variant="light">
           Open a school year
         </Button>
@@ -55,7 +55,7 @@ function YearStatus({ students, years }: { students: Student[]; years: Year[] })
         <Title order={2} className="panel-title">
           School year {year.name}
         </Title>
-        <Text className="panel-text">{plural(year.sections.length, "class section", "class sections")}</Text>
+        <Text className="panel-text">{plural(year.classes.length, "class", "classes")}</Text>
       </div>
       <p className="status-line">
         <strong>{inYear}</strong> of {plural(students.length, "student is", "students are")} in a class.
@@ -93,13 +93,13 @@ function Recent({ students }: { students: Student[] }) {
     <ul className="recent">
       {recent.map((s) => (
         <li key={s.studentId}>
-          <Link to="/students" state={{ found: s.studentId }} className="recent-row">
+          <Link to={`/students/${s.studentId}`} className="recent-row">
             <span className="recent-adm">{s.admissionNumber}</span>
             <span className="recent-name">
               {s.firstName} {s.lastName}
             </span>
             <span className={s.enrollments[0] ? "recent-class" : "recent-class none"}>
-              {s.enrollments[0] ? `${gradeLabel(s.enrollments[0].grade)} ${s.enrollments[0].section}` : "No class"}
+              {s.enrollments[0] ? gradeLabel(s.enrollments[0].grade) : "No class"}
             </span>
           </Link>
         </li>

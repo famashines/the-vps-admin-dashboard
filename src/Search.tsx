@@ -12,7 +12,7 @@ const places: { to: string; label: string; text: string; icon: IconName }[] = [
   { to: "/", label: "Dashboard", text: "Today at the office", icon: "dashboard" },
   { to: "/students", label: "Students", text: "Every registered student", icon: "students" },
   { to: "/students/new", label: "Register a student", text: "New admission", icon: "add" },
-  { to: "/classes", label: "Classes", text: "School years and sections", icon: "classes" },
+  { to: "/classes", label: "Classes", text: "School years and their classes", icon: "classes" },
   { to: "/fees", label: "Fees", text: "Fee schedule and student balances", icon: "fees" },
 ];
 
@@ -64,7 +64,7 @@ export function Search() {
             {found.slice(0, 8).map((s) => {
               const enrollment = s.enrollments[0];
               return (
-                <Spotlight.Action key={s.studentId} className="search-item" onClick={() => navigate("/students", { state: { found: s.studentId } })}>
+                <Spotlight.Action key={s.studentId} className="search-item" onClick={() => navigate(`/students/${s.studentId}`)}>
                   <span className="search-adm">{s.admissionNumber}</span>
                   <span className="search-main">
                     <span className="search-label">
@@ -74,7 +74,7 @@ export function Search() {
                       {s.fatherName ? `Father ${s.fatherName}` : `Guardian ${s.guardian.name}`}, {s.guardian.phone}
                     </span>
                   </span>
-                  <span className={enrollment ? "search-class" : "search-class none"}>{enrollment ? `${gradeLabel(enrollment.grade)} ${enrollment.section}` : "No class"}</span>
+                  <span className={enrollment ? "search-class" : "search-class none"}>{enrollment ? gradeLabel(enrollment.grade) : "No class"}</span>
                 </Spotlight.Action>
               );
             })}
