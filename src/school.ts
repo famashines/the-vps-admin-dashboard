@@ -2,15 +2,30 @@ import { signInUrl } from "./session.ts";
 
 export const GRADES = [
   ["playgroup", "Playgroup"],
-  ["nursery", "Nursery"],
-  ["prep", "Prep"],
+  ["kg-1", "KG-1"],
+  ["kg-2", "KG-2"],
   ...Array.from({ length: 10 }, (_, i) => [`class-${i + 1}`, `Class ${i + 1}`]),
 ] as [string, string][];
 
-export const gradeLabel = (grade: string) => GRADES.find(([value]) => value === grade)?.[1] ?? grade;
+const grades = (from: number, to: number) => GRADES.slice(from, to + 1).map(([grade]) => grade);
+export const STAGES = [
+  ["Pre-primary", grades(0, 2)],
+  ["Primary", grades(3, 7)],
+  ["Middle", grades(8, 10)],
+  ["Secondary", grades(11, 12)],
+] as [string, string[]][];
 
-export type Section = { classSectionId: string; version: number; grade: string; section: string; students: number };
-export type Year = { academicYearId: string; version: number; name: string; startsOn: string; endsOn: string; sections: Section[] };
+export const gradeLabel = (grade: string) => GRADES.find(([value]) => value === grade)?.[1] ?? grade;
+export const stageOf = (grade: string) => STAGES.find(([, list]) => list.includes(grade))?.[0];
+
+export type SchoolClass = { classId: string; version: number; grade: string; students: number };
+export type Year = { academicYearId: string; version: number; name: string; startsOn: string; endsOn: string; classes: SchoolClass[] };
+
+export const classGroups = (classes: SchoolClass[], label = (c: SchoolClass) => gradeLabel(c.grade), suffix = "") =>
+  STAGES.map(([stage, list]) => ({
+    group: stage + suffix,
+    items: list.flatMap((grade) => classes.filter((c) => c.grade === grade)).map((c) => ({ value: c.classId, label: label(c) })),
+  })).filter((g) => g.items.length);
 export type Answer = { ok: true; data: any } | { ok: false; status: number; message: string; fields: Record<string, string> };
 
 export function schoolYearOf(today: Date) {

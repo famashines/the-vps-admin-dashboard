@@ -1,6 +1,6 @@
 import { Button, Table, Text, TextInput, Title, VisuallyHidden } from "@mantine/core";
 import { useEffect, useState } from "react";
-import { Link, useLocation, useSearchParams } from "react-router";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 import type { AccountSummary } from "../fees.ts";
 import { findsStudent } from "../find.ts";
 import { Icon } from "../icons";
@@ -57,8 +57,9 @@ export function Students() {
   const [enrolled, setEnrolled] = useState<string>();
   const [balances, setBalances] = useState<Map<string, number>>();
   type Note = { studentId: string; admissionNumber: string; name: string; enrolledIn?: string; enrollProblem?: string };
-  const { registered, updated, found } = (useLocation().state ?? {}) as { registered?: Note; updated?: Note; found?: string };
-  const marked = registered?.studentId ?? updated?.studentId ?? found;
+  const { registered, updated } = (useLocation().state ?? {}) as { registered?: Note; updated?: Note };
+  const marked = registered?.studentId ?? updated?.studentId;
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const filter = params.get("q") ?? "";
 
@@ -159,17 +160,23 @@ export function Students() {
                     </Table.Tr>
                   )}
                   {shown.map((s) => (
-                    <Table.Tr key={s.studentId} className={s.studentId === marked ? "new" : undefined}>
+                    <Table.Tr
+                      key={s.studentId}
+                      className={s.studentId === marked ? "new open-row" : "open-row"}
+                      onClick={(event) => (event.target as HTMLElement).closest("a, button") || navigate(`/students/${s.studentId}`)}
+                    >
                       <Table.Td className="adm">{s.admissionNumber}</Table.Td>
                       <Table.Td className="name">
-                        {s.firstName} {s.lastName}
+                        <Link to={`/students/${s.studentId}`} className="row-link">
+                          {s.firstName} {s.lastName}
+                        </Link>
                       </Table.Td>
                       <Table.Td>{s.fatherName}</Table.Td>
                       <Table.Td>
                         {s.enrollments[0] ? (
-                          <span className="class-cell" title={s.enrollments[0].academicYearName}>
-                            {gradeLabel(s.enrollments[0].grade)} {s.enrollments[0].section}
-                          </span>
+                          <Link to={`/classes/${s.enrollments[0].classId}`} className="class-cell" title={s.enrollments[0].academicYearName}>
+                            {gradeLabel(s.enrollments[0].grade)}
+                          </Link>
                         ) : (
                           <Button variant="subtle" size="compact-sm" onClick={() => setEnrolling({ studentId: s.studentId, name: `${s.firstName} ${s.lastName}` })}>
                             Enroll
@@ -205,7 +212,7 @@ export function Students() {
         onEnrolled={(enrollment) => {
           if (state.status === "loaded" && enrolling) {
             setState({ status: "loaded", students: state.students.map((s) => (s.studentId === enrolling.studentId ? { ...s, enrollments: [enrollment, ...s.enrollments] } : s)) });
-            setEnrolled(`Enrolled ${enrolling.name} in ${gradeLabel(enrollment.grade)} ${enrollment.section}, ${enrollment.academicYearName}.`);
+            setEnrolled(`Enrolled ${enrolling.name} in ${gradeLabel(enrollment.grade)}, ${enrollment.academicYearName}.`);
           }
           setEnrolling(undefined);
         }}

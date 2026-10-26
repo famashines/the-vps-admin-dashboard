@@ -9,7 +9,7 @@ export type AccountSummary = {
   studentId: string;
   academicYearId: string;
   academicYearName: string;
-  classSectionId: string;
+  classId: string;
   grade: string;
   openedOn: string;
   charged: Money;
