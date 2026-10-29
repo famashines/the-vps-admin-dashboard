@@ -710,6 +710,12 @@ select:focus-visible,
   background: var(--wash);
 }
 
+@media (max-width: 48em) {
+  .ruled .row-actions {
+    position: static;
+  }
+}
+
 .form-panel {
   padding: 0;
 }
