@@ -1,9 +1,10 @@
-import { Button, Group, Modal, Table, Text, Title } from "@mantine/core";
+import { Badge, Button, Group, Modal, Table, Text, Title } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import type { AccountSummary } from "../fees.ts";
 import { Icon } from "../icons";
-import { gradeLabel, isStale, send, stageOf, type SchoolClass, type Year } from "../school.ts";
+import { toLocal } from "../phone.ts";
+import { gradeLabel, isStale, send, showDate, stageOf, type SchoolClass, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 import { balanceText } from "./StudentFees";
 import type { Student } from "./Students";
@@ -98,6 +99,7 @@ export function ClassPage() {
 
   const { year, schoolClass, students } = state;
   const label = gradeLabel(schoolClass.grade);
+  const left = students.filter((s) => s.leftOn).length;
 
   return (
     <>
@@ -109,7 +111,7 @@ export function ClassPage() {
         <div>
           <Title order={1}>{label}</Title>
           <Text className="lead">
-            {stageOf(schoolClass.grade)}, {year.name}. {students.length} {students.length === 1 ? "student" : "students"}.
+            {stageOf(schoolClass.grade)}, {year.name}. {students.length} {students.length === 1 ? "student" : "students"}{left > 0 && `, ${left} left`}.
           </Text>
         </div>
         {students.length === 0 && <RemoveClass year={year} schoolClass={schoolClass} />}
@@ -124,14 +126,17 @@ export function ClassPage() {
             </Button>
           </div>
         ) : (
-          <Table.ScrollContainer minWidth={520} type="native">
+          <Table.ScrollContainer minWidth={900} type="native">
             <Table className="ruled" withRowBorders={false}>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Admission no.</Table.Th>
                   <Table.Th>Name</Table.Th>
                   <Table.Th>Father name</Table.Th>
+                  <Table.Th>Contact no.</Table.Th>
+                  <Table.Th>Status</Table.Th>
                   <Table.Th>Fees</Table.Th>
+                  <Table.Th className="row-action row-actions">Actions</Table.Th>
                 </Table.Tr>
               </Table.Thead>
               <Table.Tbody>
@@ -144,12 +149,41 @@ export function ClassPage() {
                       </Link>
                     </Table.Td>
                     <Table.Td>{s.fatherName}</Table.Td>
+                    <Table.Td className="num">
+                      <a href={`tel:${s.guardian.phone}`} className="row-link">
+                        {toLocal(s.guardian.phone)}
+                      </a>
+                    </Table.Td>
+                    <Table.Td>
+                      {s.leftOn ? (
+                        <Badge color="gray" variant="light" tt="none" title={`Left on ${showDate(s.leftOn)}`}>
+                          Left
+                        </Badge>
+                      ) : (
+                        <Badge color="green" variant="light" tt="none">
+                          Active
+                        </Badge>
+                      )}
+                    </Table.Td>
                     <Table.Td>
                       {balances?.has(s.studentId) && (
                         <Link to={`/students/${s.studentId}/fees`} className={`fees-link${balances.get(s.studentId)! > 0 ? " is-owed" : ""}`} aria-label={`Fee account of ${s.firstName} ${s.lastName}: ${balanceText(balances.get(s.studentId)!)}`}>
                           {balanceText(balances.get(s.studentId)!)}
                         </Link>
                       )}
+                    </Table.Td>
+                    <Table.Td className="row-action row-actions">
+                      <Group gap={4} wrap="nowrap">
+                        <Button component={Link} to={`/students/${s.studentId}`} variant="subtle" size="compact-sm" aria-label={`View ${s.firstName} ${s.lastName}`}>
+                          View
+                        </Button>
+                        <Button component={Link} to={`/students/${s.studentId}/edit`} variant="subtle" size="compact-sm" aria-label={`Edit ${s.firstName} ${s.lastName}`}>
+                          Edit
+                        </Button>
+                        <Button component={Link} to={`/students/${s.studentId}/fees`} variant="subtle" size="compact-sm" aria-label={`Fee details of ${s.firstName} ${s.lastName}`}>
+                          Fee details
+                        </Button>
+                      </Group>
                     </Table.Td>
                   </Table.Tr>
                 ))}

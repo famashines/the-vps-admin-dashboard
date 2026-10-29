@@ -19,6 +19,8 @@ export type Student = {
   dateOfBirth: string;
   gender: string;
   guardian: { name: string; relation: string; phone: string };
+  leftOn: string | null;
+  leftReason: string | null;
   enrollments: Enrollment[];
 };
 type State = { status: "loading" } | { status: "failed" } | { status: "loaded"; students: Student[] };

@@ -1,19 +1,87 @@
-import { Button, Group, Text, Title } from "@mantine/core";
-import { useEffect, useState } from "react";
+import { Badge, Button, Group, Modal, Text, TextInput, Title } from "@mantine/core";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import { toLocal } from "../phone.ts";
 import { Icon } from "../icons";
-import { gradeLabel, showDate } from "../school.ts";
+import { gradeLabel, isStale, send, showDate, todayInPakistan, type Answer } from "../school.ts";
 import { signInUrl } from "../session";
 import type { Student } from "./Students";
 
 const relations: Record<string, string> = { father: "Father", mother: "Mother", guardian: "Guardian" };
 
+function Leaving({ student, onDone }: { student: Student; onDone: () => void }) {
+  const [opened, setOpened] = useState(false);
+  const [cancelling, setCancelling] = useState<string | null>(null);
+  const [key, setKey] = useState(() => crypto.randomUUID());
+  const [saving, setSaving] = useState(false);
+  const [answer, setAnswer] = useState<Answer>();
+  const name = `${student.firstName} ${student.lastName}`;
+  const today = todayInPakistan(new Date());
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const reason = String(data.get("reason") ?? "").trim();
+    const body = cancelling
+      ? { expectedVersion: student.version }
+      : { expectedVersion: student.version, leftOn: String(data.get("leftOn")), ...(reason && { reason }) };
+    setSaving(true);
+    const result = await send(`/api/students/${student.studentId}/leaving${cancelling ? "/cancellation" : ""}`, body, key);
+    setSaving(false);
+    setAnswer(result);
+    if (!result.ok) return;
+    setKey(crypto.randomUUID());
+    setOpened(false);
+    onDone();
+  }
+
+  const failed = answer && !answer.ok ? answer : undefined;
+
+  return (
+    <>
+      <Button variant="default" className={student.leftOn ? undefined : "danger-button"} onClick={() => { setAnswer(undefined); setCancelling(student.leftOn); setOpened(true); }}>
+        {student.leftOn ? "Cancel leaving" : "Mark as left"}
+      </Button>
+      <Modal opened={opened} onClose={() => setOpened(false)} title={cancelling ? `Cancel the leaving of ${name}?` : `Mark ${name} as left?`} centered radius="md">
+        <form onSubmit={submit} className="edit-form">
+          {cancelling ? (
+            <Text>The student is active again. The monthly fees after {showDate(cancelling)} are charged again.</Text>
+          ) : (
+            <>
+              <Text>The leaving month is charged. No monthly fee is charged after it. Charges for later months are reversed.</Text>
+              <TextInput name="leftOn" label="Leaving day" type="date" defaultValue={today} max={today} error={failed?.fields.leftOn && (failed.fields.leftOn.startsWith("The") ? failed.fields.leftOn : "Enter a real date.")} classNames={{ input: "field-input" }} required withAsterisk={false} data-autofocus />
+              <TextInput name="reason" label="Reason" description="Optional" maxLength={500} autoComplete="off" classNames={{ input: "field-input" }} />
+            </>
+          )}
+          {failed && !Object.keys(failed.fields).length && (
+            <div className="problem" role="alert">
+              <Text>{failed.message}</Text>
+              {isStale(failed) && (
+                <Button variant="default" size="compact-sm" onClick={() => location.reload()}>
+                  Reload
+                </Button>
+              )}
+            </div>
+          )}
+          <Group gap="sm">
+            <Button type="submit" color={cancelling ? undefined : "red"} loading={saving}>
+              {cancelling ? "Cancel leaving" : "Mark as left"}
+            </Button>
+            <Button variant="default" onClick={() => setOpened(false)}>
+              Keep as it is
+            </Button>
+          </Group>
+        </form>
+      </Modal>
+    </>
+  );
+}
+
 export function StudentPage() {
   const { studentId } = useParams();
   const [student, setStudent] = useState<Student | "missing" | "failed">();
 
-  useEffect(() => {
+  const load = useCallback(() => {
     fetch("/api/students")
       .then(async (r) => {
         if (r.status === 401) return location.assign(signInUrl());
@@ -22,6 +90,8 @@ export function StudentPage() {
       })
       .catch(() => setStudent("failed"));
   }, [studentId]);
+
+  useEffect(load, [load]);
 
   if (student === undefined) return <Text className="state-text">Loading the student.</Text>;
   if (typeof student !== "object")
@@ -48,7 +118,18 @@ export function StudentPage() {
       </Link>
       <header className="page-head">
         <div>
-          <Title order={1}>{name}</Title>
+          <Group gap="sm" align="center">
+            <Title order={1}>{name}</Title>
+            {student.leftOn ? (
+              <Badge color="gray" variant="light" tt="none">
+                Left on {showDate(student.leftOn)}
+              </Badge>
+            ) : (
+              <Badge color="green" variant="light" tt="none">
+                Active
+              </Badge>
+            )}
+          </Group>
           <Text className="lead">
             <span className="adm-mark">{student.admissionNumber}</span>
             {enrollment ? (
@@ -61,6 +142,7 @@ export function StudentPage() {
           </Text>
         </div>
         <Group gap="sm">
+          <Leaving student={student} onDone={load} />
           <Button component={Link} to={`/students/${student.studentId}/fees`} variant="default" leftSection={<Icon name="fees" size={16} />}>
             Fee account
           </Button>
@@ -95,6 +177,12 @@ export function StudentPage() {
               <a href={`tel:${student.guardian.phone}`}>{toLocal(student.guardian.phone)}</a>
             </dd>
           </div>
+          {student.leftReason && (
+            <div>
+              <dt>Leaving reason</dt>
+              <dd>{student.leftReason}</dd>
+            </div>
+          )}
           <div>
             <dt>Classes</dt>
             <dd>
