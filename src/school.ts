@@ -39,6 +39,11 @@ export function yearStarting(start: number) {
 
 export const todayInPakistan = (now: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi" }).format(now);
 
+export function currentYear<Y extends { startsOn: string; endsOn: string }>(years: Y[], today = todayInPakistan(new Date())) {
+  const byStart = [...years].sort((a, b) => a.startsOn.localeCompare(b.startsOn));
+  return byStart.find((y) => y.startsOn <= today && today <= y.endsOn) ?? byStart.filter((y) => y.startsOn <= today).at(-1) ?? byStart[0];
+}
+
 const iso = (date: Date) => date.toISOString().slice(0, 10);
 
 function yearsBefore(today: string, years: number) {

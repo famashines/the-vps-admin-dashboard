@@ -2,7 +2,7 @@ import { Button, Progress, Text, Title } from "@mantine/core";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Icon } from "../icons";
-import { gradeLabel, type Year } from "../school.ts";
+import { currentYear, gradeLabel, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 import type { Student } from "./Students";
 
@@ -33,7 +33,7 @@ async function getJson(path: string) {
 }
 
 function YearStatus({ students, years }: { students: Student[]; years: Year[] }) {
-  const year = years[0];
+  const year = currentYear(years);
   if (!year)
     return (
       <>
