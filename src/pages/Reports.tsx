@@ -5,7 +5,7 @@ import type { AccountSummary } from "../fees.ts";
 import { pkr, showMoney } from "../money.ts";
 import { toLocal } from "../phone.ts";
 import { feeReport, share, type Totals } from "../report.ts";
-import { gradeLabel, showDate, type Year } from "../school.ts";
+import { currentYear, gradeLabel, showDate, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 import { balanceText } from "./StudentFees";
 import type { Student } from "./Students";
@@ -64,7 +64,7 @@ export function Reports() {
       {state.status === "loaded" && state.years.length > 1 && (
         <NativeSelect
           aria-label="School year"
-          value={yearId ?? state.years[0].academicYearId}
+          value={yearId ?? currentYear(state.years).academicYearId}
           onChange={(event) => setYearId(event.currentTarget.value)}
           data={state.years.map((y) => ({ value: y.academicYearId, label: y.name }))}
           classNames={{ input: "field-input" }}
@@ -96,7 +96,7 @@ export function Reports() {
       </>
     );
 
-  const year = state.years.find((y) => y.academicYearId === yearId) ?? state.years[0];
+  const year = state.years.find((y) => y.academicYearId === yearId) ?? currentYear(state.years);
   if (!year)
     return (
       <>

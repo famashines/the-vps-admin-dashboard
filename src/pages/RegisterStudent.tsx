@@ -2,7 +2,7 @@ import { Button, Group, NativeSelect, Radio, Text, TextInput, Title } from "@man
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { toE164, toLocal } from "../phone.ts";
-import { birthDateLimits, classGroups, gradeLabel, isStale, send, todayInPakistan, type Year } from "../school.ts";
+import { birthDateLimits, classGroups, currentYear, gradeLabel, isStale, send, todayInPakistan, type Year } from "../school.ts";
 import { signInUrl } from "../session";
 import type { Student } from "./Students";
 
@@ -84,7 +84,7 @@ export function RegisterStudent({ student }: { student?: Student }) {
     fetch("/api/academic-years")
       .then(async (r) => {
         const years: Year[] = r.ok ? await r.json() : [];
-        setYear((enrollment ? years.find((y) => y.academicYearId === enrollment.academicYearId) : years[0]) ?? null);
+        setYear((enrollment ? years.find((y) => y.academicYearId === enrollment.academicYearId) : currentYear(years)) ?? null);
       })
       .catch(() => setYear(null));
   }, [enrollment?.academicYearId]);
