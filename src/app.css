@@ -1274,3 +1274,45 @@ select:focus-visible,
     border-color: #000 !important;
   }
 }
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+}
+
+.figure {
+  background: var(--sheet);
+  border: 1px solid var(--ruling);
+  border-radius: var(--mantine-radius-md);
+  padding: 1rem 1.25rem;
+}
+
+.figure-label {
+  color: var(--slate);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.figure-value {
+  color: var(--ink);
+  font-size: 1.625rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-variant-numeric: proportional-nums;
+  margin-top: 0.25rem;
+}
+
+.figure-note {
+  color: var(--slate);
+  font-size: 0.8125rem;
+  margin-top: 0.125rem;
+}
+
+.ruled .total-row td {
+  font-weight: 700;
+  border-top: 1px solid var(--ruling);
+  border-bottom: 0;
+  background: var(--wash);
+}
