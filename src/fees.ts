@@ -15,6 +15,7 @@ export type AccountSummary = {
   charged: Money;
   paid: Money;
   balance: Money;
+  overdue?: Money;
 };
 export type Account = AccountSummary & { charges: Charge[]; payments: Payment[] };
 export type Schedule = { academicYearId: string; grade: string; monthlyFee: Money; admissionFee?: Money; annualFee?: Money };
